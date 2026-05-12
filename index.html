@@ -83,6 +83,10 @@
                 <i data-lucide="database" class="w-5 h-5"></i>
                 <span class="font-medium">Senarai Aset</span>
             </button>
+            <button onclick="switchTab('mobiliti')" id="nav-desktop-mobiliti" class="nav-btn-desktop w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition-colors text-slate-300">
+                <i data-lucide="truck" class="w-5 h-5"></i>
+                <span class="font-medium">Mobiliti Aset</span>
+            </button>
             <button onclick="switchTab('audit')" id="nav-desktop-audit" class="nav-btn-desktop w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition-colors text-slate-300">
                 <i data-lucide="clipboard-check" class="w-5 h-5"></i>
                 <span class="font-medium">Audit Aset</span>
@@ -170,11 +174,11 @@
                             </div>
                         </div>
                         
-                        <!-- Chart 2: Audit -->
+                        <!-- Chart 2: Status Pinjaman -->
                         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
-                            <h3 class="text-sm font-bold text-slate-700 mb-3 border-b pb-2">Prestasi Audit Bulanan</h3>
+                            <h3 class="text-sm font-bold text-slate-700 mb-3 border-b pb-2">Status Pinjaman Aset</h3>
                             <div class="relative h-48 w-full flex justify-center">
-                                <canvas id="auditChart"></canvas>
+                                <canvas id="pinjamanChart"></canvas>
                             </div>
                         </div>
 
@@ -253,13 +257,13 @@
                         </button>
                     </div>
                     
-                    <div class="flex flex-col lg:flex-row gap-3 w-full lg:w-auto">
-                        <div class="relative w-full lg:w-64 flex-shrink-0">
+                    <div class="grid grid-cols-1 sm:grid-cols-2 xl:flex xl:flex-row gap-3 w-full xl:w-auto">
+                        <div class="relative w-full xl:w-64 flex-shrink-0">
                             <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
                             <input type="text" id="searchInput" onkeyup="filterAssets()" placeholder="Cari S/N, Model..." class="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
                         </div>
                         
-                        <div class="relative w-full lg:w-48 flex-shrink-0">
+                        <div class="relative w-full xl:w-48 flex-shrink-0">
                             <select id="statusFilter" onchange="handleDropdownChange()" class="w-full appearance-none pl-4 pr-10 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition font-semibold text-slate-700 shadow-sm cursor-pointer truncate">
                                 <option value="Semua">Semua Status</option>
                                 <option value="Masih Aktif">🟢 Masih Aktif</option>
@@ -274,12 +278,24 @@
                         </div>
 
                         <!-- Dropdown Lokasi (Restored) -->
-                        <div class="relative w-full lg:w-48 flex-shrink-0">
+                        <div class="relative w-full xl:w-48 flex-shrink-0">
                             <select id="locationFilter" onchange="handleLocationDropdownChange()" class="w-full appearance-none pl-4 pr-10 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition font-semibold text-slate-700 shadow-sm cursor-pointer truncate">
                                 <option value="Semua Lokasi">Semua Lokasi</option>
                             </select>
                             <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-slate-400 border-l border-slate-100">
                                 <i data-lucide="map-pin" class="w-4 h-4"></i>
+                            </div>
+                        </div>
+
+                        <!-- Dropdown Status Pinjaman (Baru) -->
+                        <div class="relative w-full xl:w-48 flex-shrink-0">
+                            <select id="pinjamanFilter" onchange="handlePinjamanDropdownChange()" class="w-full appearance-none pl-4 pr-10 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition font-semibold text-slate-700 shadow-sm cursor-pointer truncate">
+                                <option value="Semua Pinjaman">Semua Pinjaman</option>
+                                <option value="Tersedia">🟢 Tersedia</option>
+                                <option value="Dipinjam">🔴 Dipinjam</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-slate-400 border-l border-slate-100">
+                                <i data-lucide="handshake" class="w-4 h-4"></i>
                             </div>
                         </div>
                     </div>
@@ -308,6 +324,30 @@
 
                 <!-- Mobile Card View (Restored) -->
                 <div id="asset-cards" class="md:hidden grid grid-cols-1 gap-4 pb-4">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+
+            <!-- VIEW: MOBILITI ASET (NEW) -->
+            <div id="view-mobiliti" class="view-section hidden space-y-4">
+                <div class="flex justify-between items-end">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800">Mobiliti Aset</h2>
+                        <p class="text-sm text-slate-500">Pilih aset untuk dibawa ke tapak (site)</p>
+                    </div>
+                    <button onclick="openMobilitiCart()" class="relative flex items-center space-x-2 px-3 md:px-4 py-2 bg-brand-600 text-white rounded-lg shadow-sm hover:bg-brand-500 transition-colors">
+                        <i data-lucide="shopping-cart" class="w-4 h-4"></i>
+                        <span class="text-sm font-semibold hidden md:inline">Troli Aset</span>
+                        <span id="mobiliti-cart-count" class="absolute -top-2 -right-2 w-5 h-5 bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white hidden">0</span>
+                    </button>
+                </div>
+
+                <div class="relative w-full md:max-w-md">
+                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                    <input type="text" id="mobilitiSearchInput" onkeyup="renderMobilitiAssets()" placeholder="Cari Aset, S/N, Model..." class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition shadow-sm">
+                </div>
+
+                <div id="mobiliti-asset-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
                     <!-- Injected via JS -->
                 </div>
             </div>
@@ -460,6 +500,11 @@
                 <button onclick="switchTab('assets')" id="nav-mobile-assets" class="nav-btn-mobile flex-1 flex flex-col items-center justify-center hover:text-white transition-colors">
                     <i data-lucide="database" class="w-5 h-5 mb-1"></i>
                     <span class="text-[10px] font-semibold tracking-wider uppercase">Aset</span>
+                </button>
+                <button onclick="switchTab('mobiliti')" id="nav-mobile-mobiliti" class="nav-btn-mobile flex-1 flex flex-col items-center justify-center hover:text-white transition-colors relative">
+                    <i data-lucide="truck" class="w-5 h-5 mb-1"></i>
+                    <span class="text-[10px] font-semibold tracking-wider uppercase">Mobiliti</span>
+                    <span id="mobiliti-badge-mobile" class="absolute top-1.5 right-1/4 w-3.5 h-3.5 rounded-full bg-rose-500 text-[8px] font-bold flex items-center justify-center text-white hidden">0</span>
                 </button>
                 <button onclick="switchTab('audit')" id="nav-mobile-audit" class="nav-btn-mobile flex-1 flex flex-col items-center justify-center hover:text-white transition-colors">
                     <i data-lucide="clipboard-check" class="w-5 h-5 mb-1"></i>
@@ -629,6 +674,65 @@
             </div>
         </div>
 
+        <!-- Mobiliti Checkout Modal -->
+        <div id="mobiliti-modal" class="fixed inset-0 z-[120] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="mobiliti-modal-content">
+                <div class="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="truck" class="w-5 h-5 text-brand-500"></i> Pengesahan Mobiliti Aset
+                    </h3>
+                    <button onclick="closeMobilitiCart()" class="p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-full transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto p-4 md:p-6 no-scrollbar">
+                    <!-- Selected Assets List -->
+                    <div class="mb-4">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Aset Terpilih (<span id="mobiliti-selected-count">0</span>)</h4>
+                        <div id="mobiliti-selected-list" class="space-y-2 max-h-40 overflow-y-auto pr-2">
+                            <!-- Injected via JS -->
+                        </div>
+                    </div>
+
+                    <form id="mobilitiForm" onsubmit="submitMobiliti(event)" class="space-y-4 text-sm border-t border-slate-100 pt-4">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Nama Peminjam <span class="text-rose-500">*</span></label>
+                                <input type="text" id="mob-nama" required placeholder="Cth: Ahmad Albab" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Nama Projek <span class="text-rose-500">*</span></label>
+                                <input type="text" id="mob-projek" required placeholder="Cth: Penyelenggaraan RTU" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Lokasi Tapak (Site) <span class="text-rose-500">*</span></label>
+                                <input type="text" id="mob-lokasi" required placeholder="Cth: Site Cyberjaya" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Tempoh Pinjaman <span class="text-rose-500">*</span></label>
+                                <input type="text" id="mob-tempoh" required placeholder="Cth: 3 Hari / 1 Minggu" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Kondisi Aset Semasa <span class="text-rose-500">*</span></label>
+                            <select id="mob-kondisi" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition cursor-pointer">
+                                <option value="Baik">Semua Baik (Good)</option>
+                                <option value="Ada Kerosakan Sedikit">Ada Kerosakan Sedikit (Minor Defect)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Catatan (Remark) <span class="text-xs text-slate-400 font-normal">(Jika ada kerosakan)</span></label>
+                            <textarea id="mob-remark" rows="2" placeholder="Nyatakan komponen kerosakan atau catatan tambahan jika ada..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition resize-none"></textarea>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
+                    <button type="button" onclick="closeMobilitiCart()" class="px-5 py-2.5 bg-white text-slate-600 border border-slate-200 font-semibold rounded-lg shadow-sm hover:bg-slate-50 transition">Batal</button>
+                    <button type="submit" form="mobilitiForm" id="btn-submit-mobiliti" class="flex items-center justify-center min-w-[120px] px-5 py-2.5 bg-brand-600 text-white font-semibold rounded-lg shadow-md hover:bg-brand-500 active:scale-95 transition">Sahkan Pergerakan</button>
+                </div>
+            </div>
+        </div>
+
         <!-- PDF Viewer Modal -->
         <div id="pdf-modal" class="fixed inset-0 z-[110] hidden bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-2 md:p-6 opacity-0 transition-opacity duration-300">
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-full md:h-[90vh] flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="pdf-modal-content">
@@ -696,13 +800,14 @@
         const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQvA59NaAn4pJNF06QFAOPhTlr9iVz9GXxgC9svC3vJveeVJsE05-xa6r1VboOFuVQQwE6VLXLUgwye/pub?gid=1244661157&single=true&output=csv';
         
         // URL WEB APP APPS SCRIPT ANDA
-        const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxBnaMZ2l6T16w9fMuqE4og_FQRvDeBeDG6my2XNW2lHxq4I8jUelxyEb0JKcVtEkW2oA/exec';
+        const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfHSU40sPvEYGtVNnBzvWulDT6dJGV6VbagSvOOPl6mKQCu3EHO3kjnQ4K4sXnEHdgnQ/exec';
         
         let globalData = [];
         let myChart = null;
-        let auditChart = null; // Variable for new Audit Chart
+        let pinjamanChart = null; 
         let currentFilter = 'Semua';
         let currentLocationFilter = 'Semua Lokasi';
+        let currentPinjamanFilter = 'Semua Pinjaman';
         
         let currentAuditTabView = 'pending';
         let expandedAuditId = null; 
@@ -712,6 +817,7 @@
         const ITEMS_PER_PAGE = 10;
         
         let currentEditingAsset = null;
+        let mobilitiCart = []; // Array for Mobiliti Asset selection
 
         lucide.createIcons();
 
@@ -762,6 +868,8 @@
             document.getElementById('statusFilter').value = status;
             currentLocationFilter = 'Semua Lokasi';
             document.getElementById('locationFilter').value = 'Semua Lokasi';
+            currentPinjamanFilter = 'Semua Pinjaman';
+            if(document.getElementById('pinjamanFilter')) document.getElementById('pinjamanFilter').value = 'Semua Pinjaman';
             switchTab('assets');
             filterAssets();
         }
@@ -771,7 +879,14 @@
             document.getElementById('locationFilter').value = loc;
             currentFilter = 'Semua';
             document.getElementById('statusFilter').value = 'Semua';
+            currentPinjamanFilter = 'Semua Pinjaman';
+            if(document.getElementById('pinjamanFilter')) document.getElementById('pinjamanFilter').value = 'Semua Pinjaman';
             switchTab('assets');
+            filterAssets();
+        }
+
+        function handlePinjamanDropdownChange() {
+            currentPinjamanFilter = document.getElementById('pinjamanFilter').value;
             filterAssets();
         }
 
@@ -804,6 +919,9 @@
             }
             if(tabId === 'audit') {
                 renderAuditList();
+            }
+            if(tabId === 'mobiliti') {
+                renderMobilitiAssets();
             }
         }
 
@@ -928,6 +1046,9 @@
             if (!document.getElementById('view-audit').classList.contains('hidden')) {
                 renderAuditList();
             }
+            if (!document.getElementById('view-mobiliti').classList.contains('hidden')) {
+                renderMobilitiAssets();
+            }
         }
 
         function updateDashboard() {
@@ -935,25 +1056,24 @@
             let valid = 0, warningMonth = 0, warningWeek = 0, expired = 0;
             let locationCounts = {};
             
-            // Audit breakdown metrics
             let auditPending = 0;
             let auditBaik = 0;
             let auditRosak = 0;
             let auditHilang = 0;
 
+            let pinjamanTersedia = 0;
+            let pinjamanDipinjam = 0;
+
             globalData.forEach(item => {
-                // Calibration Status
                 if (item._status === 'Masih Aktif') valid++;
                 else if (item._status === 'Lagi Sebulan') warningMonth++;
                 else if (item._status === 'Lagi Seminggu') warningWeek++;
                 else if (item._status === 'Telah Luput') expired++;
 
-                // Location Breakdown
                 let loc = item['Location Origin'];
                 if (!loc || loc.trim() === '') loc = 'Tidak Dinyatakan';
                 locationCounts[loc] = (locationCounts[loc] || 0) + 1;
                 
-                // Audit Status Logic
                 let lastAuditVal = item['Last Audit Date'] || item['Last Audit'];
                 let isAudited = item._auditSessionDone || isAuditedThisMonth(lastAuditVal);
 
@@ -962,9 +1082,17 @@
                     if (stat === 'Baik') auditBaik++;
                     else if (stat === 'Rosak') auditRosak++;
                     else if (stat === 'Hilang') auditHilang++;
-                    else auditBaik++; // Fallback if data is weird
+                    else auditBaik++; 
                 } else {
                     auditPending++;
+                }
+
+                // Kiraan Status Pinjaman (Lajur Q)
+                let statusPinjaman = item['Status Pinjaman'] || '';
+                if (statusPinjaman.trim().toLowerCase() === 'dipinjam') {
+                    pinjamanDipinjam++;
+                } else {
+                    pinjamanTersedia++;
                 }
             });
 
@@ -973,7 +1101,6 @@
             document.getElementById('kpi-warning').innerText = warningMonth + warningWeek; 
             document.getElementById('kpi-expired').innerText = expired;
 
-            // Kemaskini Kad Ringkasan Audit
             document.getElementById('kpi-audit-done').innerText = (auditBaik + auditRosak + auditHilang);
             document.getElementById('kpi-audit-pending').innerText = auditPending;
             document.getElementById('kpi-audit-baik').innerText = auditBaik;
@@ -1025,7 +1152,6 @@
             locationDropdown.innerHTML = locationOptionsHtml;
             locationDropdown.value = currentLocationFilter;
 
-            // --- Calibration Status Chart (Doughnut) ---
             if (myChart) myChart.destroy();
             const ctx = document.getElementById('calibChart').getContext('2d');
             myChart = new Chart(ctx, {
@@ -1049,16 +1175,15 @@
                 }
             });
             
-            // --- Audit Performance Chart (Doughnut) ---
-            if (auditChart) auditChart.destroy();
-            const ctxAudit = document.getElementById('auditChart').getContext('2d');
-            auditChart = new Chart(ctxAudit, {
+            if (pinjamanChart) pinjamanChart.destroy();
+            const ctxPinjaman = document.getElementById('pinjamanChart').getContext('2d');
+            pinjamanChart = new Chart(ctxPinjaman, {
                 type: 'doughnut',
                 data: {
-                    labels: ['Belum Audit', 'Baik', 'Rosak', 'Hilang'],
+                    labels: ['Tersedia', 'Dipinjam'],
                     datasets: [{
-                        data: [auditPending, auditBaik, auditRosak, auditHilang],
-                        backgroundColor: ['#cbd5e1', '#10b981', '#f59e0b', '#f43f5e'],
+                        data: [pinjamanTersedia, pinjamanDipinjam],
+                        backgroundColor: ['#10b981', '#0ea5e9'],
                         borderWidth: 0,
                         hoverOffset: 4
                     }]
@@ -1205,6 +1330,239 @@
             cardContainer.innerHTML = cardsHtml;
             lucide.createIcons();
         }
+
+        // --- MOBILITI ASET LOGIC ---
+        function toggleMobilitiCart(id) {
+            const item = globalData.find(d => d._id === id);
+            if(item) {
+                let statusPinjamanRaw = item['Status Pinjaman'] || '';
+                if(statusPinjamanRaw.trim().toLowerCase() === 'dipinjam') {
+                    showToast("Aset ini sedang dipinjam dan tidak boleh ditambah ke troli.", "error");
+                    return;
+                }
+            }
+
+            const index = mobilitiCart.indexOf(id);
+            if (index > -1) {
+                mobilitiCart.splice(index, 1);
+            } else {
+                mobilitiCart.push(id);
+            }
+            updateMobilitiBadges();
+            renderMobilitiAssets(); 
+        }
+
+        function updateMobilitiBadges() {
+            const count = mobilitiCart.length;
+            const desktopBadge = document.getElementById('mobiliti-cart-count');
+            const mobileBadge = document.getElementById('mobiliti-badge-mobile');
+            
+            if (count > 0) {
+                desktopBadge.innerText = count;
+                desktopBadge.classList.remove('hidden');
+                if (mobileBadge) {
+                    mobileBadge.innerText = count;
+                    mobileBadge.classList.remove('hidden');
+                }
+            } else {
+                desktopBadge.classList.add('hidden');
+                if (mobileBadge) mobileBadge.classList.add('hidden');
+            }
+        }
+
+        function renderMobilitiAssets() {
+            const searchTerm = document.getElementById('mobilitiSearchInput').value.toLowerCase();
+            const listContainer = document.getElementById('mobiliti-asset-list');
+            
+            let filteredData = globalData.filter(item => {
+                const searchString = `${item['Make']} ${item['Model']} ${item['Serial No']} ${item['Category']}`.toLowerCase();
+                return searchString.includes(searchTerm);
+            });
+
+            if (filteredData.length === 0) {
+                listContainer.innerHTML = `<div class="col-span-full py-12 flex flex-col items-center justify-center text-slate-400 bg-white rounded-xl border border-dashed border-slate-200"><i data-lucide="package-x" class="w-12 h-12 mb-2 opacity-50"></i><p class="text-sm font-medium">Tiada aset dijumpai.</p></div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            let cardsHtml = '';
+            filteredData.forEach(item => {
+                let statusPinjamanRaw = item['Status Pinjaman'] || '';
+                let statusPinj = statusPinjamanRaw.trim().toLowerCase() === 'dipinjam' ? 'Dipinjam' : 'Tersedia';
+
+                const isSelected = mobilitiCart.includes(item._id);
+                const borderClass = isSelected ? 'border-brand-500 bg-brand-50/30 shadow-md ring-1 ring-brand-500' : 'border-slate-200 hover:border-brand-300';
+                
+                let checkButtonHtml;
+                let cardClickEvent;
+                let opacityClass = 'bg-white';
+                
+                if (statusPinj === 'Dipinjam') {
+                    checkButtonHtml = `<button disabled class="p-1 rounded-full cursor-not-allowed flex-shrink-0" title="Aset sedang dipinjam"><i data-lucide="lock" class="w-5 h-5 text-slate-300"></i></button>`;
+                    cardClickEvent = '';
+                    opacityClass = 'bg-slate-50 opacity-70'; // Visual indicator for disabled state
+                } else {
+                    const checkIcon = isSelected ? `<i data-lucide="check-circle-2" class="w-6 h-6 text-brand-600 fill-brand-100"></i>` : `<i data-lucide="circle" class="w-6 h-6 text-slate-300"></i>`;
+                    checkButtonHtml = `<button onclick="toggleMobilitiCart(${item._id})" class="p-1 rounded-full hover:bg-slate-100 transition flex-shrink-0 active:scale-90">${checkIcon}</button>`;
+                    cardClickEvent = `onclick="toggleMobilitiCart(${item._id})"`;
+                }
+
+                let pinjamanBadge = statusPinj === 'Dipinjam' 
+                    ? `<span class="px-1.5 py-0.5 text-[9px] font-bold rounded bg-blue-100 text-blue-800 border border-blue-200 ml-2">DIPINJAM</span>`
+                    : `<span class="px-1.5 py-0.5 text-[9px] font-bold rounded bg-emerald-100 text-emerald-800 border border-emerald-200 ml-2">TERSEDIA</span>`;
+
+                cardsHtml += `
+                    <div class="${opacityClass} p-4 rounded-xl shadow-sm border ${borderClass} relative overflow-hidden transition flex flex-col justify-between h-full group">
+                        <div class="flex justify-between items-start mb-2">
+                            <div class="flex-1 pr-2">
+                                <div class="flex items-center mb-1">
+                                    <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider">${item['Category'] || 'Umum'}</span>
+                                    ${pinjamanBadge}
+                                </div>
+                                <h3 class="text-base font-bold text-slate-800 leading-tight mt-0.5 group-hover:text-brand-600 transition cursor-pointer" onclick="openModal(${item._id})">${item['Make'] || ''} ${item['Model'] || ''}</h3>
+                            </div>
+                            ${checkButtonHtml}
+                        </div>
+                        
+                        <div class="mt-3 grid grid-cols-2 gap-2 text-sm ${statusPinj === 'Tersedia' ? 'cursor-pointer' : ''}" ${cardClickEvent}>
+                            <div>
+                                <p class="text-[10px] text-slate-500 mb-0.5 font-bold uppercase">Siri (S/N)</p>
+                                <p class="font-semibold text-slate-700">${item['Serial No'] || '-'}</p>
+                            </div>
+                            <div>
+                                <p class="text-[10px] text-slate-500 mb-0.5 font-bold uppercase">Lokasi Semasa</p>
+                                <p class="font-semibold text-slate-700 truncate" title="${item['Current Location']}">${item['Current Location'] || '-'}</p>
+                            </div>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">
+                            <span class="text-[10px] font-bold uppercase px-2 py-1 border bg-${item._statusColor}-50 text-${item._statusColor}-600 border-${item._statusColor}-200 rounded-lg shadow-sm">${item._status}</span>
+                            <button onclick="openModal(${item._id})" class="text-xs text-brand-600 font-bold hover:underline flex items-center bg-brand-50 px-2 py-1 rounded-md">Lihat Info <i data-lucide="external-link" class="w-3 h-3 ml-1"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+            listContainer.innerHTML = cardsHtml;
+            lucide.createIcons();
+        }
+
+        function openMobilitiCart() {
+            if (mobilitiCart.length === 0) {
+                showToast("Sila pilih (tick) sekurang-kurangnya satu aset terlebih dahulu.", "info");
+                return;
+            }
+
+            const listContainer = document.getElementById('mobiliti-selected-list');
+            document.getElementById('mobiliti-selected-count').innerText = mobilitiCart.length;
+
+            let listHtml = '';
+            mobilitiCart.forEach(id => {
+                const item = globalData.find(d => d._id === id);
+                if (item) {
+                    listHtml += `
+                        <div class="flex justify-between items-center p-3 bg-white border border-slate-200 rounded-xl shadow-sm">
+                            <div>
+                                <p class="text-xs font-bold text-slate-800">${item['Make']} ${item['Model']}</p>
+                                <p class="text-[10px] text-slate-500 font-medium">SN: ${item['Serial No']}</p>
+                            </div>
+                            <button type="button" onclick="removeFromCartInModal(${id})" class="text-rose-500 hover:bg-rose-50 p-1.5 rounded-lg border border-transparent hover:border-rose-100 transition active:scale-95">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    `;
+                }
+            });
+            listContainer.innerHTML = listHtml;
+            lucide.createIcons();
+
+            const modal = document.getElementById('mobiliti-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                document.getElementById('mobiliti-modal-content').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function removeFromCartInModal(id) {
+            toggleMobilitiCart(id);
+            if (mobilitiCart.length === 0) {
+                closeMobilitiCart();
+            } else {
+                openMobilitiCart();
+            }
+        }
+
+        function closeMobilitiCart() {
+            const modal = document.getElementById('mobiliti-modal');
+            modal.classList.add('opacity-0');
+            document.getElementById('mobiliti-modal-content').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        async function submitMobiliti(e) {
+            e.preventDefault();
+            const formBtn = document.getElementById('btn-submit-mobiliti');
+            const originalText = formBtn.innerHTML;
+            formBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-2"></i> Memproses...`;
+            formBtn.disabled = true;
+            lucide.createIcons();
+
+            try {
+                // Himpunkan senarai aset yang dipilih
+                const selectedAssets = mobilitiCart.map(id => {
+                    const item = globalData.find(d => d._id === id);
+                    return {
+                        rowId: item._rowId,
+                        category: item['Category'] || '',
+                        make: item['Make'] || '',
+                        model: item['Model'] || '',
+                        serialNo: item['Serial No'] || ''
+                    };
+                });
+
+                // Bungkus data mobiliti beserta senarai aset
+                const payloadData = {
+                    action: 'mobiliti',
+                    nama: document.getElementById('mob-nama').value,
+                    projek: document.getElementById('mob-projek').value,
+                    lokasi: document.getElementById('mob-lokasi').value,
+                    tempoh: document.getElementById('mob-tempoh').value,
+                    kondisi: document.getElementById('mob-kondisi').value,
+                    remark: document.getElementById('mob-remark').value,
+                    assets: selectedAssets
+                };
+
+                const response = await fetch(APP_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payloadData)
+                });
+
+                const result = await response.json();
+
+                if (result.status === "success") {
+                    showCustomAlert(`Pendaftaran Mobiliti Berjaya!\n\nSebanyak ${mobilitiCart.length} aset telah dikemas kini dan direkodkan ke dalam Log Mobiliti Aset.`);
+                    mobilitiCart = [];
+                    updateMobilitiBadges();
+                    closeMobilitiCart();
+                    e.target.reset();
+                    
+                    // Segar semula data untuk memaparkan lokasi/pemegang baharu
+                    setTimeout(() => { loadData(); }, 1500);
+                } else {
+                    throw new Error(result.message);
+                }
+
+            } catch (error) {
+                console.error("Ralat Mobiliti:", error);
+                showCustomAlert("Ralat berlaku ketika memproses data: " + error.message);
+            } finally {
+                formBtn.innerHTML = originalText;
+                formBtn.disabled = false;
+            }
+        }
+        // --- END MOBILITI LOGIC ---
 
         function setAuditView(viewType) {
             currentAuditTabView = viewType;
@@ -1699,8 +2057,18 @@
                 } else {
                     matchesLocation = itemLoc === currentLocationFilter;
                 }
+
+                let matchesPinjaman = false;
+                let statusPinjamanRaw = item['Status Pinjaman'] || '';
+                let statusPinj = statusPinjamanRaw.trim().toLowerCase() === 'dipinjam' ? 'Dipinjam' : 'Tersedia';
+
+                if(currentPinjamanFilter === 'Semua Pinjaman') {
+                    matchesPinjaman = true;
+                } else {
+                    matchesPinjaman = statusPinj === currentPinjamanFilter;
+                }
                 
-                return matchesSearch && matchesStatus && matchesLocation;
+                return matchesSearch && matchesStatus && matchesLocation && matchesPinjaman;
             });
 
             renderAssets(filteredData);
@@ -1736,10 +2104,18 @@
             }
 
             const detailsGrid = document.getElementById('modal-details');
+            
+            let statusPinjamanRaw = item['Status Pinjaman'] || '';
+            let statusPinj = statusPinjamanRaw.trim().toLowerCase() === 'dipinjam' ? 'Dipinjam' : 'Tersedia';
+            let pinjamanBadge = statusPinj === 'Dipinjam' 
+                ? `<span class="px-2 py-1 text-[10px] font-bold rounded-full bg-blue-100 text-blue-800 border border-blue-200">Dipinjam</span>`
+                : `<span class="px-2 py-1 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">Tersedia</span>`;
+
             const fields = [
                 { label: 'Siri (S/N)', value: item['Serial No'] },
                 { label: 'Kategori', value: item['Category'] },
                 { label: 'Status Penentukuran', value: `<span class="px-2 py-1 text-[10px] font-bold rounded-full bg-${item._statusColor}-100 text-${item._statusColor}-800 border border-${item._statusColor}-200">${item._status}</span>`, isHtml: true },
+                { label: 'Status Pinjaman', value: pinjamanBadge, isHtml: true },
                 { label: 'Tarikh Luput', value: item['Expired Date'] },
                 { label: 'Dikalibrasi Oleh', value: item['Calibration By'] },
                 { label: 'Asal Lokasi', value: item['Location Origin'] },
