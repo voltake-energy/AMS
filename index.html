@@ -1,0 +1,2187 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Sistem Pengurusan Aset</title>
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f9ff',
+                            100: '#e0f2fe',
+                            500: '#0ea5e9',
+                            600: '#0284c7',
+                            900: '#0c4a6e',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Chart.js & PapaParse & Lucide Icons -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        /* Custom PWA Styles */
+        body {
+            -webkit-tap-highlight-color: transparent;
+            background-color: #f8fafc;
+        }
+        /* Hide scrollbar for clean app look */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        /* Safe area for iOS PWA */
+        .pb-safe {
+            padding-bottom: env(safe-area-inset-bottom, 20px);
+        }
+        /* Custom transition for audit details expansion */
+        .audit-details-content {
+            transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out;
+            max-height: 0;
+            opacity: 0;
+            overflow: hidden;
+        }
+        .audit-details-content.expanded {
+            max-height: 500px;
+            opacity: 1;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased h-screen flex flex-col md:flex-row overflow-hidden selection:bg-brand-500 selection:text-white">
+
+    <!-- Sidebar (Desktop) / Hidden on Mobile -->
+    <aside class="hidden md:flex flex-col w-64 bg-slate-900 text-slate-300 h-full border-r border-slate-800 shadow-xl z-20">
+        <div class="p-6 flex items-center space-x-3 text-white border-b border-slate-800">
+            <i data-lucide="wrench" class="w-8 h-8 text-brand-500"></i>
+            <h1 class="text-xl font-bold tracking-tight leading-tight">EngAsset<br><span class="text-sm text-slate-400 font-normal">Management</span></h1>
+        </div>
+        <nav class="flex-1 px-4 py-6 space-y-2">
+            <button onclick="switchTab('dashboard')" id="nav-desktop-dashboard" class="nav-btn-desktop w-full flex items-center space-x-3 px-4 py-3 rounded-lg bg-brand-600 text-white transition-colors">
+                <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                <span class="font-medium">Papan Pemuka</span>
+            </button>
+            <button onclick="switchTab('assets')" id="nav-desktop-assets" class="nav-btn-desktop w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition-colors">
+                <i data-lucide="database" class="w-5 h-5"></i>
+                <span class="font-medium">Senarai Aset</span>
+            </button>
+            <button onclick="switchTab('audit')" id="nav-desktop-audit" class="nav-btn-desktop w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition-colors text-slate-300">
+                <i data-lucide="clipboard-check" class="w-5 h-5"></i>
+                <span class="font-medium">Audit Aset</span>
+            </button>
+            <button onclick="switchTab('recalibrate')" id="nav-desktop-recalibrate" class="nav-btn-desktop w-full flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-slate-800 transition-colors text-slate-300 relative">
+                <i data-lucide="refresh-ccw" class="w-5 h-5"></i>
+                <span class="font-medium">Kalibrasi Semula</span>
+                <span id="recalib-badge-desktop" class="absolute right-4 w-2 h-2 rounded-full bg-rose-500 hidden animate-pulse"></span>
+            </button>
+        </nav>
+        <div class="p-4 border-t border-slate-800 text-xs text-center text-slate-500">
+            V1.0.0 &copy; 2026 PWA Eng.
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col h-full relative">
+        <!-- Mobile Header -->
+        <header class="md:hidden bg-slate-900 text-white p-4 flex items-center justify-between shadow-md z-20">
+            <div class="flex items-center space-x-2">
+                <i data-lucide="wrench" class="w-6 h-6 text-brand-500"></i>
+                <h1 class="text-lg font-bold">EngAsset</h1>
+            </div>
+            <button onclick="loadData()" class="p-2 rounded-full bg-slate-800 text-brand-400 hover:bg-slate-700 active:scale-95 transition">
+                <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+            </button>
+        </header>
+
+        <!-- Loader -->
+        <div id="loader" class="absolute inset-0 bg-slate-50/90 z-50 flex flex-col items-center justify-center backdrop-blur-sm">
+            <i data-lucide="loader-2" class="w-10 h-10 text-brand-500 animate-spin mb-4"></i>
+            <p class="text-slate-600 font-medium animate-pulse">Menarik data dari satelit (Google Sheets)...</p>
+        </div>
+
+        <!-- Scrollable Views Container -->
+        <div class="flex-1 overflow-y-auto no-scrollbar p-4 md:p-8 pb-32 md:pb-8 bg-slate-50 relative" id="main-scroll-area">
+            
+            <!-- VIEW: DASHBOARD -->
+            <div id="view-dashboard" class="view-section space-y-6">
+                
+                <div class="flex justify-between items-end">
+                    <div>
+                        <h2 class="text-2xl font-bold text-slate-800">Papan Pemuka</h2>
+                        <p class="text-sm text-slate-500">Analisis Penentukuran & Audit Aset</p>
+                    </div>
+                    <button onclick="loadData()" class="hidden md:flex items-center space-x-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg shadow-sm hover:bg-slate-50 transition">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        <span class="text-sm font-medium">Segar Semula</span>
+                    </button>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div onclick="navigateAndFilter('Semua')" class="cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                        <span class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Jumlah Aset</span>
+                        <span id="kpi-total" class="text-3xl font-bold text-slate-800 mt-2">0</span>
+                    </div>
+                    <div onclick="navigateAndFilter('Masih Aktif')" class="cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all bg-white p-4 rounded-xl border border-emerald-100 shadow-sm flex flex-col relative overflow-hidden">
+                        <div class="absolute right-0 top-0 w-2 h-full bg-emerald-500"></div>
+                        <span class="text-emerald-600 text-xs font-semibold uppercase tracking-wider">Aktif & Sah</span>
+                        <span id="kpi-valid" class="text-3xl font-bold text-slate-800 mt-2">0</span>
+                    </div>
+                    <div onclick="navigateAndFilter('Hampir Luput')" class="cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all bg-white p-4 rounded-xl border border-amber-100 shadow-sm flex flex-col relative overflow-hidden">
+                        <div class="absolute right-0 top-0 w-2 h-full bg-amber-500"></div>
+                        <span class="text-amber-600 text-xs font-semibold uppercase tracking-wider">Hampir Luput</span>
+                        <span id="kpi-warning" class="text-3xl font-bold text-slate-800 mt-2">0</span>
+                    </div>
+                    <div onclick="navigateAndFilter('Telah Luput')" class="cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all bg-white p-4 rounded-xl border border-rose-100 shadow-sm flex flex-col relative overflow-hidden">
+                        <div class="absolute right-0 top-0 w-2 h-full bg-rose-500"></div>
+                        <span class="text-rose-600 text-xs font-semibold uppercase tracking-wider">Telah Luput</span>
+                        <span id="kpi-expired" class="text-3xl font-bold text-slate-800 mt-2">0</span>
+                    </div>
+                </div>
+
+                <!-- Charts Area: Responsive Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Left Column: Stacked Charts (Penentukuran & Audit) -->
+                    <div class="col-span-1 flex flex-col gap-6">
+                        <!-- Chart 1: Penentukuran -->
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                            <h3 class="text-sm font-bold text-slate-700 mb-3 border-b pb-2">Status Penentukuran</h3>
+                            <div class="relative h-48 w-full flex justify-center">
+                                <canvas id="calibChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Chart 2: Audit -->
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                            <h3 class="text-sm font-bold text-slate-700 mb-3 border-b pb-2">Prestasi Audit Bulanan</h3>
+                            <div class="relative h-48 w-full flex justify-center">
+                                <canvas id="auditChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Ringkasan KAD Audit Bulanan -->
+                        <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
+                            <h3 class="text-sm font-bold text-slate-700 mb-3 border-b pb-2">Ringkasan Audit (Bulan Semasa)</h3>
+                            
+                            <!-- Main KPI: Selesai & Belum -->
+                            <div class="grid grid-cols-2 gap-3 mb-3">
+                                <div class="bg-brand-50 p-3 rounded-lg border border-brand-100 flex flex-col items-center justify-center">
+                                    <span class="text-2xl font-bold text-brand-600" id="kpi-audit-done">0</span>
+                                    <span class="text-[10px] uppercase font-bold text-brand-700 mt-1">Selesai Audit</span>
+                                </div>
+                                <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 flex flex-col items-center justify-center">
+                                    <span class="text-2xl font-bold text-slate-500" id="kpi-audit-pending">0</span>
+                                    <span class="text-[10px] uppercase font-bold text-slate-600 mt-1">Belum Audit</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Breakdown KPI: Baik, Rosak, Hilang -->
+                            <div class="grid grid-cols-3 gap-2">
+                                <div class="bg-emerald-50 py-2 rounded-lg border border-emerald-100 text-center flex flex-col justify-center">
+                                    <span class="text-lg font-bold text-emerald-600 leading-tight" id="kpi-audit-baik">0</span>
+                                    <span class="text-[9px] uppercase font-bold text-emerald-700 mt-0.5">Baik</span>
+                                </div>
+                                <div class="bg-amber-50 py-2 rounded-lg border border-amber-100 text-center flex flex-col justify-center">
+                                    <span class="text-lg font-bold text-amber-600 leading-tight" id="kpi-audit-rosak">0</span>
+                                    <span class="text-[9px] uppercase font-bold text-amber-700 mt-0.5">Rosak</span>
+                                </div>
+                                <div class="bg-rose-50 py-2 rounded-lg border border-rose-100 text-center flex flex-col justify-center">
+                                    <span class="text-lg font-bold text-rose-600 leading-tight" id="kpi-audit-hilang">0</span>
+                                    <span class="text-[9px] uppercase font-bold text-rose-700 mt-0.5">Hilang</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Tindakan Segera -->
+                    <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm col-span-1 lg:col-span-2 flex flex-col h-full min-h-[400px]">
+                        <h3 class="text-base font-bold text-slate-700 mb-4 border-b pb-2 flex justify-between items-center">
+                            Tindakan Segera
+                            <span class="text-xs bg-rose-50 text-rose-600 font-semibold px-2.5 py-1 rounded-full"><span id="action-total-count">0</span> Aset Terlibat</span>
+                        </h3>
+                        <div id="action-list" class="flex-1 overflow-y-auto pr-2 space-y-3">
+                            <!-- Injected via JS -->
+                        </div>
+                        <div id="action-pagination" class="hidden mt-4 pt-3 border-t flex justify-between items-center text-sm">
+                            <button id="action-prev-btn" onclick="prevActionPage()" class="p-2 bg-slate-50 rounded-lg text-slate-600 hover:bg-brand-50 hover:text-brand-600 transition disabled:opacity-30 disabled:cursor-not-allowed border border-slate-200"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+                            <span id="action-page-info" class="text-slate-500 font-medium text-xs">Muka 1 dari 1</span>
+                            <button id="action-next-btn" onclick="nextActionPage()" class="p-2 bg-slate-50 rounded-lg text-slate-600 hover:bg-brand-50 hover:text-brand-600 transition disabled:opacity-30 disabled:cursor-not-allowed border border-slate-200"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Asset by Location Origin -->
+                <div class="pt-2">
+                    <h3 class="text-base font-bold text-slate-700 mb-4 border-b pb-2">Aset Mengikut Lokasi Asal</h3>
+                    <div id="location-cards" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: ASSETS LIST -->
+            <div id="view-assets" class="view-section hidden space-y-4">
+                <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                    <div class="flex justify-between items-center w-full md:w-auto">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800">Senarai Aset</h2>
+                            <p class="text-sm text-slate-500">Pangkalan data induk inventori</p>
+                        </div>
+                        <button onclick="openAddModal()" class="flex items-center space-x-1.5 md:space-x-2 px-3 md:px-4 py-2 bg-brand-600 text-white rounded-lg shadow-sm hover:bg-brand-500 transition-colors ml-2 md:ml-4 h-fit whitespace-nowrap">
+                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                            <span class="text-sm font-semibold hidden sm:inline">Tambah Aset</span>
+                            <span class="text-sm font-semibold sm:hidden">Tambah</span>
+                        </button>
+                    </div>
+                    
+                    <div class="flex flex-col lg:flex-row gap-3 w-full lg:w-auto">
+                        <div class="relative w-full lg:w-64 flex-shrink-0">
+                            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                            <input type="text" id="searchInput" onkeyup="filterAssets()" placeholder="Cari S/N, Model..." class="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                        </div>
+                        
+                        <div class="relative w-full lg:w-48 flex-shrink-0">
+                            <select id="statusFilter" onchange="handleDropdownChange()" class="w-full appearance-none pl-4 pr-10 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition font-semibold text-slate-700 shadow-sm cursor-pointer truncate">
+                                <option value="Semua">Semua Status</option>
+                                <option value="Masih Aktif">🟢 Masih Aktif</option>
+                                <option value="Hampir Luput">🟡 Semua Hampir Luput</option>
+                                <option value="Lagi Sebulan">&nbsp;&nbsp;↳ Lagi Sebulan</option>
+                                <option value="Lagi Seminggu">&nbsp;&nbsp;↳ Lagi Seminggu</option>
+                                <option value="Telah Luput">🔴 Telah Luput</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-slate-400 border-l border-slate-100">
+                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                            </div>
+                        </div>
+
+                        <!-- Dropdown Lokasi (Restored) -->
+                        <div class="relative w-full lg:w-48 flex-shrink-0">
+                            <select id="locationFilter" onchange="handleLocationDropdownChange()" class="w-full appearance-none pl-4 pr-10 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition font-semibold text-slate-700 shadow-sm cursor-pointer truncate">
+                                <option value="Semua Lokasi">Semua Lokasi</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-slate-400 border-l border-slate-100">
+                                <i data-lucide="map-pin" class="w-4 h-4"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Desktop Table View (Restored) -->
+                <div class="hidden md:block bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200 text-sm">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="px-4 py-3 text-left font-semibold text-slate-600 uppercase tracking-wider text-xs">No</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-slate-600 uppercase tracking-wider text-xs">Aset & S/N</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-slate-600 uppercase tracking-wider text-xs">Kategori</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-slate-600 uppercase tracking-wider text-xs">Lokasi</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-slate-600 uppercase tracking-wider text-xs">Tarikh Luput</th>
+                                    <th class="px-4 py-3 text-left font-semibold text-slate-600 uppercase tracking-wider text-xs">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="asset-tbody" class="bg-white divide-y divide-slate-200">
+                                <!-- Injected via JS -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Mobile Card View (Restored) -->
+                <div id="asset-cards" class="md:hidden grid grid-cols-1 gap-4 pb-4">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+
+            <!-- VIEW: AUDIT BULANAN (Restored) -->
+            <div id="view-audit" class="view-section hidden space-y-6">
+                <!-- Header & Progress -->
+                <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
+                    <div class="absolute right-0 top-0 w-3 h-full bg-brand-500"></div>
+                    <div class="flex justify-between items-end mb-4">
+                        <div>
+                            <h2 class="text-2xl font-bold text-slate-800">Audit Aset Bulanan</h2>
+                            <p class="text-sm text-slate-500 font-medium mt-1" id="audit-month-label">Bulan Semasa</p>
+                        </div>
+                    </div>
+                    <!-- Progress Bar -->
+                    <div class="space-y-2 mt-6">
+                        <div class="flex justify-between text-sm font-bold text-slate-700">
+                            <span>Prestasi Audit Semasa</span>
+                            <span id="audit-progress-text" class="text-brand-600 bg-brand-50 px-2 py-0.5 rounded">0 / 0</span>
+                        </div>
+                        <div class="w-full bg-slate-100 rounded-full h-3.5 overflow-hidden border border-slate-200">
+                            <div id="audit-progress-bar" class="bg-gradient-to-r from-brand-400 to-brand-600 h-full rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Search Filter for Audit -->
+                <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 w-full">
+                    <!-- Sub Tabs Filter -->
+                    <div class="flex space-x-2 bg-slate-200/60 p-1 rounded-xl w-full lg:w-fit flex-shrink-0">
+                        <button id="tab-audit-pending" onclick="setAuditView('pending')" class="flex-1 sm:flex-none px-5 py-2 text-sm font-bold rounded-lg bg-white text-slate-800 shadow-sm transition">Perlu Audit</button>
+                        <button id="tab-audit-done" onclick="setAuditView('done')" class="flex-1 sm:flex-none px-5 py-2 text-sm font-bold rounded-lg text-slate-500 hover:text-slate-800 hover:bg-white/50 transition">Selesai</button>
+                    </div>
+
+                    <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                        <!-- Audit Status Filter (Hidden on Pending Default) -->
+                        <div id="audit-status-filter-container" class="hidden relative w-full sm:w-48 flex-shrink-0">
+                            <select id="auditStatusFilter" onchange="renderAuditList()" class="w-full appearance-none pl-4 pr-10 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition font-semibold text-slate-700 shadow-sm cursor-pointer truncate">
+                                <option value="Semua">Semua Status</option>
+                                <option value="Baik">🟢 Baik Sahaja</option>
+                                <option value="RosakHilang">🔴 Rosak @ Hilang</option>
+                            </select>
+                            <div class="absolute inset-y-0 right-0 flex items-center px-3 pointer-events-none text-slate-400 border-l border-slate-100">
+                                <i data-lucide="chevron-down" class="w-4 h-4"></i>
+                            </div>
+                        </div>
+
+                        <!-- Search Input -->
+                        <div class="relative w-full sm:w-64 flex-shrink-0">
+                            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                            <input type="text" id="auditSearchInput" onkeyup="renderAuditList()" placeholder="Cari S/N, Model..." class="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition shadow-sm">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Audit List -->
+                <div id="audit-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
+                    <!-- Injected via JS -->
+                </div>
+            </div>
+
+            <!-- VIEW: RE-CALIBRATE (Restored) -->
+            <div id="view-recalibrate" class="view-section hidden space-y-6">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-800">Penentukuran Semula</h2>
+                    <p class="text-sm text-slate-500">Kemas kini sijil bagi aset yang hampir / telah luput</p>
+                </div>
+
+                <!-- Paparan 1: Senarai Carian -->
+                <div id="recalib-list-container" class="space-y-4 transition-all duration-300">
+                    <div class="relative w-full max-w-md">
+                        <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                        <input type="text" id="recalibSearchInput" onkeyup="filterRecalib()" placeholder="Cari S/N, Model, Make..." class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition shadow-sm">
+                    </div>
+
+                    <div class="bg-blue-50 border border-blue-100 text-blue-700 px-4 py-3 rounded-xl flex gap-3 text-sm">
+                        <i data-lucide="info" class="w-5 h-5 flex-shrink-0 text-blue-500"></i>
+                        <p>Hanya aset berstatus <strong>Hampir Luput</strong> dan <strong>Telah Luput</strong> sahaja dipaparkan di sini untuk penentukuran semula.</p>
+                    </div>
+
+                    <div id="recalib-asset-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+                <!-- Paparan 2: Borang Kemaskini Kalibrasi -->
+                <div id="recalib-form-container" class="hidden bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden transition-all duration-300">
+                    <div class="p-4 md:p-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
+                        <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                            <i data-lucide="file-check-2" class="w-5 h-5 text-brand-500"></i> Kemas Kini Sijil
+                        </h3>
+                        <button onclick="cancelRecalib()" class="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg shadow-sm hover:bg-slate-50 transition text-xs font-semibold flex items-center gap-1">
+                            <i data-lucide="arrow-left" class="w-3 h-3"></i> Kembali
+                        </button>
+                    </div>
+                    
+                    <div class="p-4 md:p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="md:col-span-1 bg-slate-50 p-4 rounded-xl border border-slate-100 space-y-3">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Maklumat Aset</h4>
+                            <div><p class="text-[10px] text-slate-500 uppercase font-semibold">Kategori</p><p class="text-sm font-bold text-slate-800" id="rec-val-category">-</p></div>
+                            <div><p class="text-[10px] text-slate-500 uppercase font-semibold">Jenama & Model</p><p class="text-sm font-bold text-slate-800" id="rec-val-makemodel">-</p></div>
+                            <div><p class="text-[10px] text-slate-500 uppercase font-semibold">Siri (S/N)</p><p class="text-sm font-bold text-slate-800" id="rec-val-serial">-</p></div>
+                            <div class="pt-2 border-t border-slate-200">
+                                <p class="text-[10px] text-slate-500 uppercase font-semibold">Status Semasa</p>
+                                <div id="rec-val-status" class="mt-1"></div>
+                            </div>
+                        </div>
+
+                        <div class="md:col-span-2">
+                            <form id="recalibForm" onsubmit="submitRecalibrate(event)" class="space-y-4">
+                                <input type="hidden" id="rec-input-id">
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1">Tarikh Dikalibrasi <span class="text-rose-500">*</span></label>
+                                        <input type="date" id="rec-input-datecalib" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-slate-700">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-slate-600 mb-1">Tarikh Luput Baharu <span class="text-rose-500">*</span></label>
+                                        <input type="date" id="rec-input-dateexp" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-slate-700">
+                                    </div>
+                                    <div class="sm:col-span-2">
+                                        <label class="block text-xs font-bold text-slate-600 mb-1">Dikalibrasi Oleh <span class="text-rose-500">*</span></label>
+                                        <input type="text" id="rec-input-calibby" required placeholder="Cth: SIRIM Berhad" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                                    </div>
+                                    <div class="sm:col-span-2 bg-blue-50/50 p-3 rounded-lg border border-blue-100">
+                                        <label class="block text-xs font-bold text-slate-600 mb-1">Muat Naik Sijil Penentukuran Baharu (PDF) <span class="text-rose-500">*</span></label>
+                                        <input type="file" id="rec-input-cert" accept=".pdf" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 transition cursor-pointer">
+                                    </div>
+                                </div>
+                                <div class="pt-4 border-t border-slate-100 flex justify-end gap-2">
+                                    <button type="button" onclick="cancelRecalib()" class="px-5 py-2.5 bg-white text-slate-600 border border-slate-200 font-semibold rounded-lg shadow-sm hover:bg-slate-50 transition">Batal</button>
+                                    <button type="submit" class="flex items-center justify-center min-w-[140px] px-5 py-2.5 bg-emerald-600 text-white font-semibold rounded-lg shadow-md hover:bg-emerald-500 active:scale-95 transition">Sahkan Kalibrasi</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Bottom Navigation (Mobile Only) -->
+        <nav class="md:hidden fixed bottom-0 left-0 w-full z-30 bg-[#222222] shadow-[0_-4px_15px_rgba(0,0,0,0.2)] pb-safe">
+            <div class="flex h-[64px] text-slate-400">
+                <button onclick="switchTab('dashboard')" id="nav-mobile-dashboard" class="nav-btn-mobile flex-1 flex flex-col items-center justify-center text-white bg-black transition-colors">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 mb-1"></i>
+                    <span class="text-[10px] font-semibold tracking-wider uppercase">Utama</span>
+                </button>
+                <button onclick="switchTab('assets')" id="nav-mobile-assets" class="nav-btn-mobile flex-1 flex flex-col items-center justify-center hover:text-white transition-colors">
+                    <i data-lucide="database" class="w-5 h-5 mb-1"></i>
+                    <span class="text-[10px] font-semibold tracking-wider uppercase">Aset</span>
+                </button>
+                <button onclick="switchTab('audit')" id="nav-mobile-audit" class="nav-btn-mobile flex-1 flex flex-col items-center justify-center hover:text-white transition-colors">
+                    <i data-lucide="clipboard-check" class="w-5 h-5 mb-1"></i>
+                    <span class="text-[10px] font-semibold tracking-wider uppercase">Audit</span>
+                </button>
+                <button onclick="switchTab('recalibrate')" id="nav-mobile-recalibrate" class="nav-btn-mobile flex-1 flex flex-col items-center justify-center hover:text-white transition-colors relative">
+                    <i data-lucide="refresh-ccw" class="w-5 h-5 mb-1"></i>
+                    <span class="text-[10px] font-semibold tracking-wider uppercase">Kalibrasi</span>
+                    <span id="recalib-badge-mobile" class="absolute top-1.5 right-1/4 w-2 h-2 rounded-full bg-rose-500 hidden animate-pulse"></span>
+                </button>
+            </div>
+        </nav>
+
+        <!-- Form Tambah Aset Baharu Modal (Popup) -->
+        <div id="add-modal" class="fixed inset-0 z-[120] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="add-modal-content">
+                <div class="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="plus-circle" class="w-5 h-5 text-brand-500"></i> Daftar Aset Baharu
+                    </h3>
+                    <button onclick="closeAddModal()" class="p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-full transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto p-4 md:p-6 no-scrollbar">
+                    <form id="addAssetForm" onsubmit="submitNewAsset(event)" class="space-y-4 text-sm">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="col-span-2 sm:col-span-1">
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Kategori <span class="text-rose-500">*</span></label>
+                                <input type="text" id="add-category" required placeholder="Cth: Multimeter" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                            </div>
+                            <div class="col-span-2 sm:col-span-1">
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Lokasi Asal <span class="text-rose-500">*</span></label>
+                                <input type="text" id="add-location" required placeholder="Cth: Lab A" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                            </div>
+                            <div class="col-span-2 sm:col-span-1">
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Jenama (Make) <span class="text-rose-500">*</span></label>
+                                <input type="text" id="add-make" required placeholder="Cth: Fluke" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                            </div>
+                            <div class="col-span-2 sm:col-span-1">
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Model <span class="text-rose-500">*</span></label>
+                                <input type="text" id="add-model" required placeholder="Cth: 87V" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-bold text-slate-600 mb-1">No Siri (Serial No) <span class="text-rose-500">*</span></label>
+                                <input type="text" id="add-serial" required placeholder="Cth: SN-12345678" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                            </div>
+                            <div class="col-span-2 border-t border-slate-100 pt-4 mt-2">
+                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Maklumat Penentukuran (Calibration)</h4>
+                            </div>
+                            <div class="col-span-2 sm:col-span-1">
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Tarikh Luput <span class="text-rose-500">*</span></label>
+                                <input type="date" id="add-expired" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-slate-700">
+                            </div>
+                            <div class="col-span-2 sm:col-span-1">
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Dikalibrasi Oleh</label>
+                                <input type="text" id="add-calib" placeholder="Cth: SIRIM" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Muat Naik Sijil PDF <span class="text-xs text-slate-400 font-normal">(Pilihan)</span></label>
+                                <input type="file" id="add-cert" accept=".pdf" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Muat Naik Gambar Aset <span class="text-xs text-slate-400 font-normal">(Pilihan)</span></label>
+                                <input type="file" id="add-pic" accept="image/*" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
+                    <button type="button" onclick="closeAddModal()" class="px-5 py-2.5 bg-white text-slate-600 border border-slate-200 font-semibold rounded-lg shadow-sm hover:bg-slate-50 transition" id="btn-cancel-add">Batal</button>
+                    <button type="submit" form="addAssetForm" class="flex items-center justify-center min-w-[120px] px-5 py-2.5 bg-brand-600 text-white font-semibold rounded-lg shadow-md hover:bg-brand-500 active:scale-95 transition disabled:opacity-70 disabled:cursor-wait" id="btn-submit-add">Simpan Aset</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form Kemaskini (Edit) Aset Modal -->
+        <div id="edit-modal" class="fixed inset-0 z-[125] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="edit-modal-content">
+                <div class="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="edit" class="w-5 h-5 text-amber-500"></i> Kemaskini Maklumat Aset
+                    </h3>
+                    <button onclick="closeEditModal()" class="p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-full transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                
+                <div class="flex-1 overflow-y-auto p-4 md:p-6 no-scrollbar">
+                    <form id="editAssetForm" onsubmit="submitEditAsset(event)" class="space-y-4 text-sm">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="col-span-2 sm:col-span-1">
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Kategori <span class="text-rose-500">*</span></label>
+                                <input type="text" id="edit-category" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition">
+                            </div>
+                            <div class="col-span-2 sm:col-span-1">
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Lokasi Asal <span class="text-rose-500">*</span></label>
+                                <input type="text" id="edit-location" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition">
+                            </div>
+                            <div class="col-span-2 sm:col-span-1">
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Jenama (Make) <span class="text-rose-500">*</span></label>
+                                <input type="text" id="edit-make" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition">
+                            </div>
+                            <div class="col-span-2 sm:col-span-1">
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Model <span class="text-rose-500">*</span></label>
+                                <input type="text" id="edit-model" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition">
+                            </div>
+                            <div class="col-span-2">
+                                <label class="block text-xs font-bold text-slate-600 mb-1">No Siri (Serial No) <span class="text-rose-500">*</span></label>
+                                <input type="text" id="edit-serial" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition">
+                            </div>
+                            <div class="col-span-2 border-t border-slate-100 pt-4 mt-2">
+                                <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Maklumat Penentukuran (Calibration)</h4>
+                            </div>
+                            <div class="col-span-2 sm:col-span-1">
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Tarikh Luput <span class="text-rose-500">*</span></label>
+                                <input type="date" id="edit-expired" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition text-slate-700">
+                            </div>
+                            <div class="col-span-2 sm:col-span-1">
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Dikalibrasi Oleh</label>
+                                <input type="text" id="edit-calib" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-amber-500 focus:border-amber-500 outline-none transition">
+                            </div>
+                            <div class="col-span-2 bg-blue-50/50 p-3 rounded-lg border border-blue-100">
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Tukar Sijil PDF <span class="text-xs text-slate-400 font-normal">(Biarkan kosong jika tiada pertukaran)</span></label>
+                                <input type="file" id="edit-cert" accept=".pdf" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            </div>
+                            <div class="col-span-2 bg-blue-50/50 p-3 rounded-lg border border-blue-100">
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Tukar Gambar Aset <span class="text-xs text-slate-400 font-normal">(Biarkan kosong jika tiada pertukaran)</span></label>
+                                <input type="file" id="edit-pic" accept="image/*" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
+                    <button type="button" onclick="closeEditModal()" class="px-5 py-2.5 bg-white text-slate-600 border border-slate-200 font-semibold rounded-lg shadow-sm hover:bg-slate-50 transition" id="btn-cancel-edit">Batal</button>
+                    <button type="submit" form="editAssetForm" class="flex items-center justify-center min-w-[120px] px-5 py-2.5 bg-amber-500 text-white font-semibold rounded-lg shadow-md hover:bg-amber-400 active:scale-95 transition disabled:opacity-70 disabled:cursor-wait" id="btn-submit-edit">Kemaskini</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Asset Details Modal (Popup) -->
+        <div id="asset-modal" class="fixed inset-0 z-[100] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="asset-modal-content">
+                <div class="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2" id="modal-title">
+                        <i data-lucide="package-search" class="w-5 h-5 text-brand-500"></i> Maklumat Aset
+                    </h3>
+                    <button onclick="closeModal()" class="p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-full transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div class="flex-1 overflow-y-auto p-4 md:p-6 no-scrollbar">
+                    <div class="flex flex-col sm:flex-row gap-6">
+                        <div class="w-full sm:w-1/3 flex-shrink-0">
+                            <div class="aspect-square sm:aspect-[4/5] bg-slate-100 rounded-xl overflow-hidden border border-slate-200 relative flex flex-col items-center justify-center group" id="modal-image-container">
+                                <!-- Image injected here -->
+                            </div>
+                        </div>
+                        <div class="w-full sm:w-2/3 grid grid-cols-2 gap-y-3 gap-x-3 text-sm" id="modal-details">
+                            <!-- Fields injected here -->
+                        </div>
+                    </div>
+                </div>
+                <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end" id="modal-cert-container">
+                    <!-- Button injected here -->
+                </div>
+                <div id="modal-audit-action-container" class="hidden bg-white border-t border-slate-200">
+                    <!-- Audit controls injected here via JS -->
+                </div>
+            </div>
+        </div>
+
+        <!-- PDF Viewer Modal -->
+        <div id="pdf-modal" class="fixed inset-0 z-[110] hidden bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-2 md:p-6 opacity-0 transition-opacity duration-300">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-full md:h-[90vh] flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="pdf-modal-content">
+                <div class="flex items-center justify-between p-3 bg-slate-800 text-white shadow-md z-10">
+                    <h3 class="text-sm md:text-base font-semibold flex items-center gap-2">
+                        <i data-lucide="file-text" class="w-4 h-4 text-brand-400"></i> Paparan Sijil (PDF)
+                    </h3>
+                    <button onclick="closePdfModal()" class="p-1.5 text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg transition-colors flex items-center gap-1 text-xs font-medium">
+                        <i data-lucide="x" class="w-4 h-4"></i> Tutup
+                    </button>
+                </div>
+                <div class="flex-1 bg-slate-200 relative w-full h-full">
+                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <i data-lucide="loader-2" class="w-8 h-8 text-slate-400 animate-spin mb-2"></i>
+                        <p class="text-xs text-slate-500 font-medium">Memuatkan dokumen...</p>
+                    </div>
+                    <iframe id="pdf-iframe" class="absolute inset-0 w-full h-full border-0 z-10 bg-white" allow="autoplay" allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audit Image Viewer Modal -->
+        <div id="audit-img-modal" class="fixed inset-0 z-[115] hidden bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="audit-img-modal-content">
+                <div class="flex items-center justify-between p-4 bg-slate-800 text-white shadow-md z-10">
+                    <h3 class="text-sm md:text-base font-semibold flex items-center gap-2">
+                        <i data-lucide="image" class="w-4 h-4 text-brand-400"></i> Laporan Kerosakan (Audit)
+                    </h3>
+                    <button onclick="closeAuditImageModal()" class="p-1.5 text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg transition-colors flex items-center gap-1 text-xs font-medium">
+                        <i data-lucide="x" class="w-4 h-4"></i> Tutup
+                    </button>
+                </div>
+                <div class="flex-1 bg-slate-100 p-4">
+                    <div class="bg-white p-3 rounded-lg border border-slate-200 mb-4 shadow-sm">
+                        <p class="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Catatan (Remark)</p>
+                        <p class="text-sm font-semibold text-slate-800 whitespace-pre-wrap" id="audit-img-modal-remark">-</p>
+                    </div>
+                    <div class="aspect-[4/3] bg-slate-200 rounded-lg overflow-hidden border border-slate-300 relative flex items-center justify-center" id="audit-img-modal-container">
+                        <!-- Image injected here -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast and Alert Containers -->
+        <div id="toast-container" class="fixed top-4 right-4 md:top-8 md:right-8 z-[150] flex flex-col gap-2 pointer-events-none"></div>
+
+        <div id="custom-alert-modal" class="fixed inset-0 z-[150] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+            <div class="bg-white rounded-xl shadow-xl w-full max-w-sm flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="custom-alert-content">
+                <div class="p-6 text-center">
+                    <div class="w-12 h-12 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center mx-auto mb-4">
+                        <i data-lucide="info" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-800 mb-2">Makluman</h3>
+                    <p id="custom-alert-message" class="text-sm text-slate-600 mb-6 whitespace-pre-wrap leading-relaxed"></p>
+                    <button onclick="closeCustomAlert()" class="w-full py-2.5 bg-brand-600 text-white font-semibold rounded-lg shadow-sm hover:bg-brand-500 active:scale-95 transition">Tutup</button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Google Sheets CSV Link (Telah disahkan URL rasmi)
+        const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQvA59NaAn4pJNF06QFAOPhTlr9iVz9GXxgC9svC3vJveeVJsE05-xa6r1VboOFuVQQwE6VLXLUgwye/pub?gid=1244661157&single=true&output=csv';
+        
+        // URL WEB APP APPS SCRIPT ANDA
+        const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxBnaMZ2l6T16w9fMuqE4og_FQRvDeBeDG6my2XNW2lHxq4I8jUelxyEb0JKcVtEkW2oA/exec';
+        
+        let globalData = [];
+        let myChart = null;
+        let auditChart = null; // Variable for new Audit Chart
+        let currentFilter = 'Semua';
+        let currentLocationFilter = 'Semua Lokasi';
+        
+        let currentAuditTabView = 'pending';
+        let expandedAuditId = null; 
+
+        let actionItemsList = [];
+        let currentActionPage = 1;
+        const ITEMS_PER_PAGE = 10;
+        
+        let currentEditingAsset = null;
+
+        lucide.createIcons();
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadData();
+        });
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const colors = type === 'error' ? 'bg-rose-600 text-white' : 'bg-slate-800 text-white';
+            const icon = type === 'error' ? 'alert-circle' : 'info';
+            
+            toast.className = `${colors} px-4 py-3 rounded-lg shadow-lg text-sm font-medium transform transition-all duration-300 translate-y-[-100%] opacity-0 flex items-center gap-3 max-w-sm pointer-events-auto`;
+            toast.innerHTML = `
+                <i data-lucide="${icon}" class="w-5 h-5 flex-shrink-0"></i>
+                <span>${message}</span>
+            `;
+            container.appendChild(toast);
+            lucide.createIcons();
+
+            setTimeout(() => { toast.classList.remove('translate-y-[-100%]', 'opacity-0'); }, 10);
+            setTimeout(() => {
+                toast.classList.add('translate-y-[-100%]', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        function showCustomAlert(message) {
+            document.getElementById('custom-alert-message').innerText = message;
+            const modal = document.getElementById('custom-alert-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                document.getElementById('custom-alert-content').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeCustomAlert() {
+            const modal = document.getElementById('custom-alert-modal');
+            modal.classList.add('opacity-0');
+            document.getElementById('custom-alert-content').classList.add('scale-95');
+            setTimeout(() => { modal.classList.add('hidden'); }, 300);
+        }
+
+        function navigateAndFilter(status) {
+            currentFilter = status;
+            document.getElementById('statusFilter').value = status;
+            currentLocationFilter = 'Semua Lokasi';
+            document.getElementById('locationFilter').value = 'Semua Lokasi';
+            switchTab('assets');
+            filterAssets();
+        }
+
+        function navigateAndFilterLocation(loc) {
+            currentLocationFilter = loc;
+            document.getElementById('locationFilter').value = loc;
+            currentFilter = 'Semua';
+            document.getElementById('statusFilter').value = 'Semua';
+            switchTab('assets');
+            filterAssets();
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+            document.getElementById('main-scroll-area').scrollTo(0,0);
+
+            document.querySelectorAll('.nav-btn-desktop').forEach(el => {
+                el.classList.remove('bg-brand-600', 'text-white');
+                el.classList.add('hover:bg-slate-800', 'text-slate-300');
+            });
+            const desktopBtn = document.getElementById(`nav-desktop-${tabId}`);
+            if(desktopBtn) {
+                desktopBtn.classList.add('bg-brand-600', 'text-white');
+                desktopBtn.classList.remove('hover:bg-slate-800', 'text-slate-300');
+            }
+
+            document.querySelectorAll('.nav-btn-mobile').forEach(el => {
+                el.classList.remove('text-white', 'bg-black');
+            });
+            const mobileBtn = document.getElementById(`nav-mobile-${tabId}`);
+            if(mobileBtn) {
+                mobileBtn.classList.add('text-white', 'bg-black');
+            }
+
+            if(tabId === 'recalibrate') {
+                cancelRecalib();
+                filterRecalib();
+            }
+            if(tabId === 'audit') {
+                renderAuditList();
+            }
+        }
+
+        function handleDropdownChange() {
+            currentFilter = document.getElementById('statusFilter').value;
+            filterAssets();
+        }
+
+        function handleLocationDropdownChange() {
+            currentLocationFilter = document.getElementById('locationFilter').value;
+            filterAssets();
+        }
+
+        function loadData() {
+            const loader = document.getElementById('loader');
+            loader.classList.remove('hidden');
+
+            Papa.parse(SHEET_URL, {
+                download: true,
+                header: true,
+                skipEmptyLines: true,
+                transformHeader: function(header) {
+                    return header.trim();
+                },
+                complete: function(results) {
+                    processData(results.data);
+                    loader.classList.add('hidden');
+                },
+                error: function(err) {
+                    console.error("Ralat membaca data:", err);
+                    showToast("Ralat memuat turun data. Sila periksa sambungan internet.", "error");
+                    loader.classList.add('hidden');
+                }
+            });
+        }
+
+        function isAuditedThisMonth(dateStr) {
+            if (!dateStr || dateStr.trim() === '' || dateStr.toLowerCase() === 'n/a') return false;
+            
+            const today = new Date();
+            const currentMonth = today.getMonth() + 1;
+            const currentYear = today.getFullYear();
+            const mm = String(currentMonth).padStart(2, '0');
+            const yyyy = currentYear;
+            
+            if (dateStr.includes(`/${mm}/${yyyy}`) || dateStr.includes(`-${mm}-${yyyy}`) || dateStr.includes(`${mm}/${yyyy}`)) {
+                return true;
+            }
+            
+            const parts = dateStr.split(/[-/]/);
+            if (parts.length >= 3) {
+                let year, month;
+                if (parts[0].length === 4) { // YYYY-MM-DD
+                    year = parseInt(parts[0], 10);
+                    month = parseInt(parts[1], 10);
+                } else { // DD/MM/YYYY
+                    year = parseInt(parts[2], 10);
+                    month = parseInt(parts[1], 10);
+                }
+                if (year === currentYear && month === currentMonth) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        function processData(data) {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            globalData = data.map((item, index) => {
+                let expiredDateStr = item['Expired Date'] || '';
+                let status = 'Masih Aktif';
+                let statusColor = 'emerald';
+                
+                if (expiredDateStr && expiredDateStr.toLowerCase() !== 'n/a' && expiredDateStr.trim() !== '') {
+                    let expDate = null;
+                    const parts = expiredDateStr.split(/[-/]/);
+                    
+                    if (parts.length === 3) {
+                        if (parts[0].length === 4) { 
+                            expDate = new Date(parts[0], parts[1] - 1, parts[2]);
+                        } else {
+                            expDate = new Date(parts[2], parts[1] - 1, parts[0]);
+                        }
+                    } else {
+                        expDate = new Date(expiredDateStr);
+                    }
+
+                    if (expDate && !isNaN(expDate.getTime())) {
+                        expDate.setHours(0, 0, 0, 0);
+                        const diffTime = expDate.getTime() - today.getTime();
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+                        if (diffDays < 0) {
+                            status = 'Telah Luput'; statusColor = 'rose';
+                        } else if (diffDays <= 7) {
+                            status = 'Lagi Seminggu'; statusColor = 'orange';
+                        } else if (diffDays <= 30) {
+                            status = 'Lagi Sebulan'; statusColor = 'amber';
+                        } else {
+                            status = 'Masih Aktif'; statusColor = 'emerald';
+                        }
+                    } else {
+                        status = 'Tarikh Ralat'; statusColor = 'slate';
+                    }
+                } else {
+                    status = 'Tiada Data'; statusColor = 'slate';
+                }
+
+                return {
+                    ...item,
+                    _id: index,
+                    _rowId: index + 2, 
+                    _status: status,
+                    _statusColor: statusColor
+                };
+            });
+
+            updateDashboard();
+            filterAssets(); 
+            if (!document.getElementById('view-audit').classList.contains('hidden')) {
+                renderAuditList();
+            }
+        }
+
+        function updateDashboard() {
+            let total = globalData.length;
+            let valid = 0, warningMonth = 0, warningWeek = 0, expired = 0;
+            let locationCounts = {};
+            
+            // Audit breakdown metrics
+            let auditPending = 0;
+            let auditBaik = 0;
+            let auditRosak = 0;
+            let auditHilang = 0;
+
+            globalData.forEach(item => {
+                // Calibration Status
+                if (item._status === 'Masih Aktif') valid++;
+                else if (item._status === 'Lagi Sebulan') warningMonth++;
+                else if (item._status === 'Lagi Seminggu') warningWeek++;
+                else if (item._status === 'Telah Luput') expired++;
+
+                // Location Breakdown
+                let loc = item['Location Origin'];
+                if (!loc || loc.trim() === '') loc = 'Tidak Dinyatakan';
+                locationCounts[loc] = (locationCounts[loc] || 0) + 1;
+                
+                // Audit Status Logic
+                let lastAuditVal = item['Last Audit Date'] || item['Last Audit'];
+                let isAudited = item._auditSessionDone || isAuditedThisMonth(lastAuditVal);
+
+                if (isAudited) {
+                    let stat = item['Audit Status'] || item._simulatedAuditStatus;
+                    if (stat === 'Baik') auditBaik++;
+                    else if (stat === 'Rosak') auditRosak++;
+                    else if (stat === 'Hilang') auditHilang++;
+                    else auditBaik++; // Fallback if data is weird
+                } else {
+                    auditPending++;
+                }
+            });
+
+            document.getElementById('kpi-total').innerText = total;
+            document.getElementById('kpi-valid').innerText = valid;
+            document.getElementById('kpi-warning').innerText = warningMonth + warningWeek; 
+            document.getElementById('kpi-expired').innerText = expired;
+
+            // Kemaskini Kad Ringkasan Audit
+            document.getElementById('kpi-audit-done').innerText = (auditBaik + auditRosak + auditHilang);
+            document.getElementById('kpi-audit-pending').innerText = auditPending;
+            document.getElementById('kpi-audit-baik').innerText = auditBaik;
+            document.getElementById('kpi-audit-rosak').innerText = auditRosak;
+            document.getElementById('kpi-audit-hilang').innerText = auditHilang;
+
+            const recalibTotal = warningMonth + warningWeek + expired;
+            if(recalibTotal > 0) {
+                document.getElementById('recalib-badge-desktop').classList.remove('hidden');
+                document.getElementById('recalib-badge-mobile').classList.remove('hidden');
+            } else {
+                document.getElementById('recalib-badge-desktop').classList.add('hidden');
+                document.getElementById('recalib-badge-mobile').classList.add('hidden');
+            }
+
+            actionItemsList = globalData.filter(item => ['Lagi Seminggu', 'Lagi Sebulan', 'Telah Luput'].includes(item._status));
+            const statusWeight = { 'Telah Luput': 1, 'Lagi Seminggu': 2, 'Lagi Sebulan': 3 };
+            actionItemsList.sort((a, b) => statusWeight[a._status] - statusWeight[b._status]);
+            
+            document.getElementById('action-total-count').innerText = actionItemsList.length;
+            currentActionPage = 1;
+            renderActionList();
+
+            const locationCardsContainer = document.getElementById('location-cards');
+            let locationHtml = '';
+            const sortedLocations = Object.entries(locationCounts).sort((a, b) => b[1] - a[1]);
+            
+            sortedLocations.forEach(([loc, count]) => {
+                const safeLocStr = loc.replace(/'/g, "\\'");
+                locationHtml += `
+                    <div onclick="navigateAndFilterLocation('${safeLocStr}')" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3 cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all">
+                        <div class="p-2.5 bg-brand-50 rounded-lg text-brand-600 flex-shrink-0">
+                            <i data-lucide="map-pin" class="w-5 h-5"></i>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-[10px] font-bold text-slate-500 uppercase tracking-wider truncate" title="${loc}">${loc}</p>
+                            <p class="text-xl font-bold text-slate-800 leading-tight">${count} <span class="text-xs font-medium text-slate-400 normal-case tracking-normal">Aset</span></p>
+                        </div>
+                    </div>
+                `;
+            });
+            locationCardsContainer.innerHTML = locationHtml;
+
+            const locationDropdown = document.getElementById('locationFilter');
+            let locationOptionsHtml = '<option value="Semua Lokasi">Semua Lokasi</option>';
+            sortedLocations.forEach(([loc, count]) => {
+                locationOptionsHtml += `<option value="${loc}">${loc}</option>`;
+            });
+            locationDropdown.innerHTML = locationOptionsHtml;
+            locationDropdown.value = currentLocationFilter;
+
+            // --- Calibration Status Chart (Doughnut) ---
+            if (myChart) myChart.destroy();
+            const ctx = document.getElementById('calibChart').getContext('2d');
+            myChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Masih Aktif', 'Lagi Sebulan', 'Lagi Seminggu', 'Telah Luput'],
+                    datasets: [{
+                        data: [valid, warningMonth, warningWeek, expired],
+                        backgroundColor: ['#10b981', '#f59e0b', '#f97316', '#f43f5e'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: { family: 'ui-sans-serif, system-ui' } } }
+                    }
+                }
+            });
+            
+            // --- Audit Performance Chart (Doughnut) ---
+            if (auditChart) auditChart.destroy();
+            const ctxAudit = document.getElementById('auditChart').getContext('2d');
+            auditChart = new Chart(ctxAudit, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Belum Audit', 'Baik', 'Rosak', 'Hilang'],
+                    datasets: [{
+                        data: [auditPending, auditBaik, auditRosak, auditHilang],
+                        backgroundColor: ['#cbd5e1', '#10b981', '#f59e0b', '#f43f5e'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { usePointStyle: true, boxWidth: 8, font: { family: 'ui-sans-serif, system-ui' } } }
+                    }
+                }
+            });
+
+            lucide.createIcons();
+        }
+
+        function renderActionList() {
+            const listContainer = document.getElementById('action-list');
+            const paginationContainer = document.getElementById('action-pagination');
+            
+            if (actionItemsList.length === 0) {
+                listContainer.innerHTML = '<div class="h-full flex flex-col items-center justify-center text-slate-400 py-10"><i data-lucide="check-circle-2" class="w-10 h-10 mb-2 text-emerald-500 opacity-50"></i><p class="text-sm italic">Semua aset dalam keadaan baik.</p></div>';
+                paginationContainer.classList.add('hidden');
+                lucide.createIcons();
+                return;
+            }
+
+            const totalPages = Math.ceil(actionItemsList.length / ITEMS_PER_PAGE);
+            const startIndex = (currentActionPage - 1) * ITEMS_PER_PAGE;
+            const endIndex = startIndex + ITEMS_PER_PAGE;
+            const paginatedItems = actionItemsList.slice(startIndex, endIndex);
+
+            let actionHtml = '';
+            paginatedItems.forEach(item => {
+                let badgeClass = '';
+                if(item._status === 'Telah Luput') badgeClass = 'bg-rose-100 text-rose-700';
+                else if(item._status === 'Lagi Seminggu') badgeClass = 'bg-orange-100 text-orange-700';
+                else badgeClass = 'bg-amber-100 text-amber-700';
+
+                actionHtml += `
+                    <div class="flex items-start justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-slate-300 transition cursor-default">
+                        <div>
+                            <p class="text-sm font-bold text-slate-800">${item['Make'] || ''} ${item['Model'] || ''}</p>
+                            <p class="text-xs text-slate-500 mt-1"><i data-lucide="hash" class="w-3 h-3 inline"></i> ${item['Serial No'] || 'Tiada SN'}</p>
+                        </div>
+                        <div class="text-right flex flex-col items-end">
+                            <span class="px-2 py-1 text-[10px] font-bold rounded-full shadow-sm ${badgeClass}">${item._status}</span>
+                            <span class="text-[10px] font-medium text-slate-500 mt-1.5">${item['Expired Date']}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            listContainer.innerHTML = actionHtml;
+            lucide.createIcons();
+
+            if(totalPages > 1) {
+                paginationContainer.classList.remove('hidden');
+                document.getElementById('action-page-info').innerText = `Muka ${currentActionPage} / ${totalPages}`;
+                
+                const prevBtn = document.getElementById('action-prev-btn');
+                const nextBtn = document.getElementById('action-next-btn');
+                
+                prevBtn.disabled = currentActionPage === 1;
+                nextBtn.disabled = currentActionPage === totalPages;
+            } else {
+                paginationContainer.classList.add('hidden');
+            }
+        }
+
+        function nextActionPage() {
+            const totalPages = Math.ceil(actionItemsList.length / ITEMS_PER_PAGE);
+            if(currentActionPage < totalPages) {
+                currentActionPage++;
+                renderActionList();
+            }
+        }
+
+        function prevActionPage() {
+            if(currentActionPage > 1) {
+                currentActionPage--;
+                renderActionList();
+            }
+        }
+
+        function renderAssets(dataArray) {
+            const tbody = document.getElementById('asset-tbody');
+            const cardContainer = document.getElementById('asset-cards');
+            
+            let tbodyHtml = '';
+            let cardsHtml = '';
+
+            dataArray.forEach((item, index) => {
+                let badge = `<span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-${item._statusColor}-100 text-${item._statusColor}-800 border border-${item._statusColor}-200">${item._status}</span>`;
+
+                tbodyHtml += `
+                    <tr onclick="openModal(${item._id})" class="hover:bg-slate-100 transition cursor-pointer">
+                        <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-500">${item['No.'] || item['No'] || index+1}</td>
+                        <td class="px-4 py-4 whitespace-nowrap">
+                            <div class="font-bold text-slate-800">${item['Make'] || '-'} ${item['Model'] || ''}</div>
+                            <div class="text-xs text-slate-500">SN: ${item['Serial No'] || '-'}</div>
+                        </td>
+                        <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-600">${item['Category'] || '-'}</td>
+                        <td class="px-4 py-4 whitespace-nowrap">
+                            <div class="text-sm text-slate-800">${item['Current Location'] || '-'}</div>
+                            <div class="text-xs text-slate-500">Oleh: ${item['Current Holder'] || '-'}</div>
+                        </td>
+                        <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-800 font-medium">${item['Expired Date'] || '-'}</td>
+                        <td class="px-4 py-4 whitespace-nowrap">${badge}</td>
+                    </tr>
+                `;
+
+                cardsHtml += `
+                    <div onclick="openModal(${item._id})" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden active:scale-[0.98] transition cursor-pointer">
+                        <div class="absolute left-0 top-0 w-1 h-full bg-${item._statusColor}-500"></div>
+                        <div class="flex justify-between items-start mb-2">
+                            <div>
+                                <span class="text-[10px] font-bold text-brand-600 uppercase tracking-wider">${item['Category'] || 'Umum'}</span>
+                                <h3 class="text-base font-bold text-slate-800 leading-tight">${item['Make'] || ''} ${item['Model'] || ''}</h3>
+                            </div>
+                            ${badge}
+                        </div>
+                        
+                        <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
+                            <div>
+                                <p class="text-xs text-slate-500 mb-0.5">Siri (S/N)</p>
+                                <p class="font-medium text-slate-800">${item['Serial No'] || '-'}</p>
+                            </div>
+                            <div>
+                                <p class="text-xs text-slate-500 mb-0.5">Tarikh Luput</p>
+                                <p class="font-medium text-slate-800">${item['Expired Date'] || '-'}</p>
+                            </div>
+                            <div class="col-span-2 pt-2 border-t border-slate-100">
+                                <p class="text-xs text-slate-500 mb-0.5"><i data-lucide="map-pin" class="w-3 h-3 inline mr-1"></i>Lokasi Semasa</p>
+                                <p class="font-medium text-slate-700">${item['Current Location'] || '-'} <span class="text-slate-400 font-normal">(${item['Current Holder'] || '-'})</span></p>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            tbody.innerHTML = tbodyHtml;
+            cardContainer.innerHTML = cardsHtml;
+            lucide.createIcons();
+        }
+
+        function setAuditView(viewType) {
+            currentAuditTabView = viewType;
+            
+            const btnPending = document.getElementById('tab-audit-pending');
+            const btnDone = document.getElementById('tab-audit-done');
+            const filterContainer = document.getElementById('audit-status-filter-container');
+            
+            if(viewType === 'pending') {
+                btnPending.className = "flex-1 sm:flex-none px-5 py-2 text-sm font-bold rounded-lg bg-white text-slate-800 shadow-sm transition";
+                btnDone.className = "flex-1 sm:flex-none px-5 py-2 text-sm font-bold rounded-lg text-slate-500 hover:text-slate-800 hover:bg-white/50 transition";
+                if(filterContainer) filterContainer.classList.add('hidden');
+            } else {
+                btnDone.className = "flex-1 sm:flex-none px-5 py-2 text-sm font-bold rounded-lg bg-white text-slate-800 shadow-sm transition";
+                btnPending.className = "flex-1 sm:flex-none px-5 py-2 text-sm font-bold rounded-lg text-slate-500 hover:text-slate-800 hover:bg-white/50 transition";
+                if(filterContainer) filterContainer.classList.remove('hidden');
+            }
+            
+            expandedAuditId = null; 
+            // Reset filter dropdown
+            if(document.getElementById('auditStatusFilter')) document.getElementById('auditStatusFilter').value = 'Semua';
+            
+            renderAuditList();
+        }
+
+        function toggleAuditDetails(id, event) {
+            if (event.target.closest('button') || event.target.closest('input')) {
+                return;
+            }
+            const isCurrentlyExpanded = expandedAuditId === id;
+            expandedAuditId = isCurrentlyExpanded ? null : id;
+            renderAuditList();
+        }
+
+        function renderAuditList() {
+            const today = new Date();
+            const yyyy = today.getFullYear();
+            
+            const bulanNames = ["Januari", "Februari", "Mac", "April", "Mei", "Jun", "Julai", "Ogos", "September", "Oktober", "November", "Disember"];
+            document.getElementById('audit-month-label').innerHTML = `<i data-lucide="calendar" class="w-4 h-4 inline mr-1 text-brand-500"></i> ${bulanNames[today.getMonth()]} ${yyyy}`;
+
+            let totalAssets = globalData.length;
+            let auditedCount = 0;
+            let listHtml = '';
+
+            const searchTerm = document.getElementById('auditSearchInput').value.toLowerCase();
+
+            const pendingList = [];
+            const doneList = [];
+
+            globalData.forEach(item => {
+                let isAudited = false;
+                let lastAuditVal = item['Last Audit Date'] || item['Last Audit'];
+                
+                if (item._auditSessionDone) {
+                    isAudited = true;
+                } else if (isAuditedThisMonth(lastAuditVal)) {
+                    isAudited = true;
+                }
+
+                if (isAudited) {
+                    auditedCount++;
+                    doneList.push(item);
+                } else {
+                    pendingList.push(item);
+                }
+            });
+
+            const percent = totalAssets === 0 ? 0 : Math.round((auditedCount / totalAssets) * 100);
+            document.getElementById('audit-progress-text').innerText = `${auditedCount} / ${totalAssets} (${percent}%)`;
+            document.getElementById('audit-progress-bar').style.width = `${percent}%`;
+
+            let targetList = currentAuditTabView === 'pending' ? pendingList : doneList;
+            
+            // Logik Filter Dropdown: Semua / Baik / Rosak @ Hilang (Hanya untuk tab Selesai)
+            if (currentAuditTabView === 'done') {
+                const statusFilterVal = document.getElementById('auditStatusFilter').value;
+                if (statusFilterVal !== 'Semua') {
+                    targetList = targetList.filter(item => {
+                        let stat = item['Audit Status'] || item._simulatedAuditStatus;
+                        if (statusFilterVal === 'Baik') return stat === 'Baik';
+                        if (statusFilterVal === 'RosakHilang') return stat === 'Rosak' || stat === 'Hilang';
+                        return true;
+                    });
+                }
+            }
+
+            if(searchTerm) {
+                targetList = targetList.filter(item => {
+                    const searchString = `${item['Make']} ${item['Model']} ${item['Serial No']}`.toLowerCase();
+                    return searchString.includes(searchTerm);
+                });
+            }
+
+            const listContainer = document.getElementById('audit-list-container');
+
+            if(targetList.length === 0) {
+                const msg = currentAuditTabView === 'pending' 
+                    ? (searchTerm ? 'Tiada aset dijumpai untuk carian ini.' : 'Bagus! Semua aset telah selesai diaudit bulan ini.') 
+                    : (searchTerm ? 'Tiada rekod audit dijumpai untuk carian ini.' : 'Belum ada rekod audit untuk bulan ini.');
+                const icon = (currentAuditTabView === 'pending' && !searchTerm) ? 'party-popper' : 'folder-open';
+                const iconColor = (currentAuditTabView === 'pending' && !searchTerm) ? 'text-brand-400' : 'text-slate-400';
+                
+                listContainer.innerHTML = `
+                    <div class="col-span-full py-12 flex flex-col items-center justify-center text-slate-500 bg-white rounded-xl border border-dashed border-slate-200 shadow-sm">
+                        <i data-lucide="${icon}" class="w-12 h-12 mb-3 ${iconColor} opacity-70"></i>
+                        <p class="text-sm font-semibold">${msg}</p>
+                    </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            targetList.forEach(item => {
+                let actionAreaHtml = '';
+                
+                if (currentAuditTabView === 'done') {
+                    let statusColorStr = 'bg-slate-100 text-slate-600 border-slate-200';
+                    let auditStat = item['Audit Status'] || item._simulatedAuditStatus || '-';
+                    let lastAuditVal = item['Last Audit Date'] || item['Last Audit'] || 'Bulan ini';
+                    
+                    if (auditStat === 'Baik') statusColorStr = 'bg-emerald-100 text-emerald-700 border-emerald-200';
+                    else if (auditStat === 'Rosak') statusColorStr = 'bg-amber-100 text-amber-700 border-amber-200';
+                    else if (auditStat === 'Hilang') statusColorStr = 'bg-rose-100 text-rose-700 border-rose-200';
+
+                    actionAreaHtml = `
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center bg-slate-50 px-3 py-2 rounded-lg">
+                            <span class="text-xs font-semibold text-slate-500"><i data-lucide="calendar-check" class="w-3.5 h-3.5 inline mr-1"></i> Disahkan Pada: <span class="text-slate-800">${item['Last Audit'] || 'Bulan ini'}</span></span>
+                            <span class="px-2 py-1 text-[10px] font-bold rounded-full border shadow-sm ${statusColorStr}">${auditStat}</span>
+                        </div>
+                    `;
+
+                    if(auditStat !== 'Baik') {
+                        actionAreaHtml += `
+                            <div class="mt-2 text-xs bg-slate-50 p-1.5 rounded-lg border border-slate-200">
+                                <button onclick="openAuditImageModal(${item._id}, event)" class="flex items-center justify-center space-x-1.5 py-2 w-full bg-white border border-slate-200 text-slate-600 hover:bg-rose-50 hover:text-rose-600 hover:border-rose-200 rounded-md transition text-xs font-bold shadow-sm">
+                                    <i data-lucide="image" class="w-3.5 h-3.5"></i>
+                                    <span>Lihat Catatan & Gambar</span>
+                                </button>
+                            </div>
+                        `;
+                    }
+                } else {
+                    actionAreaHtml = `
+                        <div class="mt-4 pt-3 border-t border-slate-100 text-center">
+                            <span class="text-xs font-semibold text-brand-500 flex items-center justify-center gap-1"><i data-lucide="mouse-pointer-click" class="w-3.5 h-3.5"></i> Klik untuk mula audit</span>
+                        </div>
+                    `;
+                }
+
+                listHtml += `
+                    <div onclick="openModal(${item._id})" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all relative overflow-hidden cursor-pointer group">
+                        <div class="absolute left-0 top-0 w-1 h-full bg-slate-200 group-hover:bg-brand-400 transition-colors"></div>
+                        <div class="absolute right-3 top-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <i data-lucide="external-link" class="w-4 h-4 text-slate-300"></i>
+                        </div>
+                        
+                        <p class="text-[10px] font-bold text-brand-600 uppercase tracking-wider mb-1">${item['Category'] || 'Kategori Umum'}</p>
+                        <h3 class="text-base font-bold text-slate-800 leading-tight pr-5">${item['Make'] || ''} ${item['Model'] || ''}</h3>
+                        
+                        <div class="mt-2 grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
+                            <div class="flex items-center text-slate-600">
+                                <span class="font-bold mr-1">S/N:</span> <span class="truncate">${item['Serial No'] || '-'}</span>
+                            </div>
+                            <div class="flex items-center text-slate-600 justify-end">
+                                <i data-lucide="map-pin" class="w-3 h-3 mr-1 flex-shrink-0"></i> <span class="truncate font-medium">${item['Current Location'] || '-'}</span>
+                            </div>
+                        </div>
+
+                        ${actionAreaHtml}
+                    </div>
+                `;
+            });
+
+            listContainer.innerHTML = listHtml;
+            lucide.createIcons();
+        }
+
+        function showAuditRemarkForm(id, status) {
+            document.getElementById(`audit-btn-group-${id}`).classList.add('hidden');
+            const formArea = document.getElementById(`audit-form-area-${id}`);
+            
+            let statusColor = status === 'Rosak' ? 'text-amber-600' : 'text-rose-600';
+            
+            formArea.innerHTML = `
+                <div class="space-y-3 animate-fade-in border border-slate-200 p-3 rounded-lg bg-white shadow-sm">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Status Pilihan: <span class="${statusColor} uppercase">${status}</span></label>
+                        <input type="text" id="modal-audit-remark" placeholder="Nyatakan sebab atau catatan kerosakan/hilang... *" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none text-sm transition" required>
+                    </div>
+                    <div class="bg-blue-50/50 p-2.5 rounded-lg border border-blue-100">
+                        <label class="block text-xs font-bold text-slate-600 mb-1">Muat Naik Gambar Berkaitan <span class="text-xs text-slate-400 font-normal">(Pilihan)</span></label>
+                        <input type="file" id="modal-audit-img" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 cursor-pointer outline-none bg-white border border-slate-200 rounded-lg">
+                    </div>
+                    <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                        <button onclick="cancelAuditAction(${id})" class="px-4 py-2 text-xs font-semibold bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition shadow-sm">Batal</button>
+                        <button onclick="confirmAuditAction(${id}, '${status}')" class="px-4 py-2 text-xs font-semibold bg-brand-600 text-white rounded-lg hover:bg-brand-500 transition shadow-sm flex items-center"><i data-lucide="send" class="w-3.5 h-3.5 mr-1.5"></i> Sahkan & Hantar</button>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+            setTimeout(() => document.getElementById('modal-audit-remark').focus(), 50);
+        }
+
+        function cancelAuditAction(id) {
+            document.getElementById(`audit-btn-group-${id}`).classList.remove('hidden');
+            document.getElementById(`audit-form-area-${id}`).innerHTML = '';
+        }
+
+        async function confirmAuditAction(id, status) {
+            const remarkInput = document.getElementById('modal-audit-remark');
+            const fileInput = document.getElementById('modal-audit-img');
+            const remark = remarkInput.value.trim();
+
+            if (!remark) {
+                showToast("Sila masukkan catatan (remark) untuk menyokong status ini.", "error");
+                remarkInput.focus();
+                return;
+            }
+
+            const btn = event.currentTarget;
+            const originalContent = btn.innerHTML;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin mr-1.5"></i> Menghantar...`;
+            btn.disabled = true;
+            lucide.createIcons();
+
+            let imgBase64 = '', imgMimeType = '', imgName = '';
+            if (fileInput && fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                try {
+                    imgBase64 = await getBase64(file);
+                    imgMimeType = file.type;
+                    imgName = file.name;
+                } catch(e) {
+                    showToast("Gagal memproses gambar. Sila cuba lagi.", "error");
+                    btn.innerHTML = originalContent;
+                    btn.disabled = false;
+                    return;
+                }
+            }
+
+            await submitAuditToServer(id, status, remark, imgBase64, imgMimeType, imgName);
+        }
+
+        async function submitAuditToServer(id, status, remark = '', imgBase64 = '', imgMimeType = '', imgName = '') {
+            const itemIndex = globalData.findIndex(d => d._id === id);
+            if(itemIndex === -1) return;
+            
+            if(status === 'Baik') {
+                const btn = event.currentTarget;
+                if(btn) {
+                    btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin mb-1"></i><span class="text-[10px] font-bold uppercase tracking-wider">Hantar...</span>`;
+                    btn.disabled = true;
+                    lucide.createIcons();
+                }
+            }
+
+            const item = globalData[itemIndex];
+            const today = new Date();
+            const dd = String(today.getDate()).padStart(2, '0');
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const yyyy = today.getFullYear();
+            const auditDate = `${dd}/${mm}/${yyyy}`;
+
+            showToast("Menghantar log audit ke pelayan...", "info");
+
+            try {
+                const payloadData = {
+                    action: 'audit',
+                    rowId: item._rowId, 
+                    auditDate: auditDate,
+                    auditStatus: status,
+                    remark: remark,
+                    auditImgBase64: imgBase64,
+                    auditImgMimeType: imgMimeType,
+                    auditImgName: imgName
+                };
+
+                const response = await fetch(APP_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payloadData)
+                });
+
+                const result = await response.json();
+
+                if (result.status === "success") {
+                    showToast(`Selesai: Aset dikemaskini sebagai ${status}`, "info");
+
+                    globalData[itemIndex]._auditSessionDone = true;
+                    globalData[itemIndex]._simulatedAuditStatus = status;
+                    globalData[itemIndex]['Last Audit Date'] = auditDate; 
+                    globalData[itemIndex]['Last Audit'] = auditDate; 
+                    globalData[itemIndex]['Audit Status'] = status;
+                    if(remark) {
+                        globalData[itemIndex]._simulatedRemark = remark;
+                        globalData[itemIndex]['Remark'] = remark;
+                    }
+                    
+                    closeModal();
+                    renderAuditList();
+                    updateDashboard(); // Also refresh charts to reflect latest audit status
+                } else {
+                    throw new Error(result.message);
+                }
+
+            } catch (error) {
+                console.error("Ralat Penghantaran Audit:", error);
+                showCustomAlert("Ralat berlaku ketika menyimpan data audit: " + error.message);
+                closeModal();
+            }
+        }
+
+        function filterRecalib() {
+            const searchTerm = document.getElementById('recalibSearchInput').value.toLowerCase();
+            const listContainer = document.getElementById('recalib-asset-list');
+            
+            let recalibData = globalData.filter(item => ['Telah Luput', 'Lagi Seminggu', 'Lagi Sebulan'].includes(item._status));
+            
+            if(searchTerm) {
+                recalibData = recalibData.filter(item => {
+                    const searchString = `${item['Make']} ${item['Model']} ${item['Serial No']}`.toLowerCase();
+                    return searchString.includes(searchTerm);
+                });
+            }
+
+            const statusWeight = { 'Telah Luput': 1, 'Lagi Seminggu': 2, 'Lagi Sebulan': 3 };
+            recalibData.sort((a, b) => statusWeight[a._status] - statusWeight[b._status]);
+
+            if(recalibData.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="col-span-full py-12 flex flex-col items-center justify-center text-slate-400 bg-white rounded-xl border border-dashed border-slate-200">
+                        <i data-lucide="shield-check" class="w-12 h-12 mb-3 text-emerald-400 opacity-50"></i>
+                        <p class="text-sm font-medium">Tiada aset ditemui untuk penentukuran.</p>
+                    </div>`;
+                lucide.createIcons();
+                return;
+            }
+
+            let cardsHtml = '';
+            recalibData.forEach(item => {
+                let badgeClass = item._status === 'Telah Luput' ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-amber-100 text-amber-700 border-amber-200';
+                
+                cardsHtml += `
+                    <div onclick="selectRecalibAsset(${item._id})" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden hover:border-brand-300 hover:shadow-md transition cursor-pointer group">
+                        <div class="absolute right-3 top-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <i data-lucide="arrow-right-circle" class="w-5 h-5 text-brand-500"></i>
+                        </div>
+                        <span class="px-2 py-0.5 inline-flex text-[10px] font-bold rounded shadow-sm border mb-2 ${badgeClass}">${item._status}</span>
+                        <h3 class="text-sm font-bold text-slate-800 leading-tight">${item['Make'] || ''} ${item['Model'] || ''}</h3>
+                        <p class="text-[10px] font-bold text-brand-600 uppercase mt-0.5">${item['Category'] || 'Kategori Umum'}</p>
+                        
+                        <div class="mt-3 bg-slate-50 p-2 rounded flex justify-between items-center text-xs border border-slate-100">
+                            <div>
+                                <span class="text-slate-400">S/N:</span> <span class="font-bold text-slate-700">${item['Serial No'] || '-'}</span>
+                            </div>
+                            <div class="text-right">
+                                <span class="text-slate-400">Luput:</span> <span class="font-bold text-slate-700">${item['Expired Date'] || '-'}</span>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            listContainer.innerHTML = cardsHtml;
+            lucide.createIcons();
+        }
+
+        function selectRecalibAsset(id) {
+            const item = globalData.find(d => d._id === id);
+            if(!item) return;
+
+            document.getElementById('rec-val-category').innerText = item['Category'] || '-';
+            document.getElementById('rec-val-makemodel').innerText = `${item['Make'] || ''} ${item['Model'] || ''}`;
+            document.getElementById('rec-val-serial').innerText = item['Serial No'] || '-';
+            
+            let badgeClass = item._status === 'Telah Luput' ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-amber-100 text-amber-700 border-amber-200';
+            document.getElementById('rec-val-status').innerHTML = `<span class="px-2 py-1 text-[10px] font-bold rounded shadow-sm border ${badgeClass}">${item._status}</span> <span class="text-xs font-semibold text-slate-600 ml-1">(${item['Expired Date']})</span>`;
+
+            document.getElementById('recalibForm').reset();
+            document.getElementById('rec-input-id').value = item._id; 
+            document.getElementById('rec-input-calibby').value = item['Calibration By'] || '';
+
+            document.getElementById('recalib-list-container').classList.add('hidden');
+            document.getElementById('recalib-form-container').classList.remove('hidden');
+            
+            document.getElementById('main-scroll-area').scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function cancelRecalib() {
+            document.getElementById('recalib-form-container').classList.add('hidden');
+            document.getElementById('recalib-list-container').classList.remove('hidden');
+        }
+
+        async function submitRecalibrate(e) {
+            e.preventDefault();
+            
+            const btn = e.target.querySelector('button[type="submit"]');
+            const originalText = btn.innerHTML;
+            const assetId = document.getElementById('rec-input-id').value;
+            
+            const item = globalData.find(d => d._id == assetId);
+            if(!item) return;
+
+            const rawCalibDate = document.getElementById('rec-input-datecalib').value;
+            const rawExpDate = document.getElementById('rec-input-dateexp').value;
+            
+            let formatCalibDate = rawCalibDate, formatExpDate = rawExpDate;
+            if (rawCalibDate) { const [y, m, d] = rawCalibDate.split('-'); formatCalibDate = `${d}/${m}/${y}`; }
+            if (rawExpDate) { const [y, m, d] = rawExpDate.split('-'); formatExpDate = `${d}/${m}/${y}`; }
+
+            btn.disabled = true;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-2"></i> Mengemaskini...`;
+            lucide.createIcons();
+            showToast("Sedang memuat naik rekod kalibrasi baharu...", "info");
+
+            try {
+                const certFile = document.getElementById('rec-input-cert').files[0];
+                let pdfBase64 = '', pdfMimeType = '', pdfName = '';
+                if (certFile) {
+                    pdfBase64 = await getBase64(certFile);
+                    pdfMimeType = certFile.type;
+                    pdfName = certFile.name;
+                }
+
+                const payloadData = {
+                    action: 'recalibrate',
+                    rowId: item._rowId, 
+                    
+                    category: item['Category'],
+                    make: item['Make'],
+                    model: item['Model'],
+                    serialNo: item['Serial No'],
+                    dateCalibrate: formatCalibDate,
+                    
+                    calibBy: document.getElementById('rec-input-calibby').value,
+                    expiredDate: formatExpDate,
+                    
+                    pdfBase64: pdfBase64,
+                    pdfMimeType: pdfMimeType,
+                    pdfName: pdfName
+                };
+
+                const response = await fetch(APP_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payloadData)
+                });
+
+                const result = await response.json();
+
+                if (result.status === "success") {
+                    showCustomAlert("Sijil kalibrasi baharu telah berjaya direkod ke dalam Masterlist dan Calibration Log.");
+                    cancelRecalib();
+                    e.target.reset(); 
+                    
+                    setTimeout(() => { loadData(); }, 1500);
+                } else {
+                    throw new Error(result.message);
+                }
+
+            } catch (error) {
+                console.error("Ralat Penghantaran Kalibrasi:", error);
+                showCustomAlert("Ralat berlaku ketika menyimpan data kalibrasi: " + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        function filterAssets() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            const filteredData = globalData.filter(item => {
+                const searchString = `${item['Make']} ${item['Model']} ${item['Serial No']} ${item['Category']} ${item['Current Location']} ${item['Location Origin']}`.toLowerCase();
+                
+                const matchesSearch = searchString.includes(searchTerm);
+                
+                let matchesStatus = false;
+                if(currentFilter === 'Semua') {
+                    matchesStatus = true;
+                } else if (currentFilter === 'Hampir Luput') {
+                    matchesStatus = item._status === 'Lagi Sebulan' || item._status === 'Lagi Seminggu';
+                } else {
+                    matchesStatus = item._status === currentFilter;
+                }
+
+                let matchesLocation = false;
+                let itemLoc = item['Location Origin'];
+                if (!itemLoc || itemLoc.trim() === '') itemLoc = 'Tidak Dinyatakan';
+
+                if(currentLocationFilter === 'Semua Lokasi') {
+                    matchesLocation = true;
+                } else {
+                    matchesLocation = itemLoc === currentLocationFilter;
+                }
+                
+                return matchesSearch && matchesStatus && matchesLocation;
+            });
+
+            renderAssets(filteredData);
+        }
+
+        function getDriveId(url) {
+            if (!url) return null;
+            const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
+            return match ? match[1] : null;
+        }
+
+        function openModal(id) {
+            const item = globalData.find(d => d._id === id);
+            if(!item) return;
+
+            document.getElementById('modal-title').innerHTML = `
+                <i data-lucide="package-search" class="w-5 h-5 text-brand-500"></i> 
+                ${item['Make'] || ''} ${item['Model'] || ''}
+            `;
+
+            const imgContainer = document.getElementById('modal-image-container');
+            const driveUrl = item['Test Set Picture'] || '';
+            const driveId = getDriveId(driveUrl);
+            
+            if (driveId) {
+                const directImgUrl = `https://lh3.googleusercontent.com/d/${driveId}`;
+                imgContainer.innerHTML = `<img src="${directImgUrl}" class="w-full h-full object-cover shadow-inner" alt="Asset Image" onerror="this.src='https://placehold.co/400x400/f8fafc/94a3b8?text=Ralat+Imej'" />`;
+            } else {
+                imgContainer.innerHTML = `
+                    <i data-lucide="image-off" class="w-12 h-12 text-slate-300"></i>
+                    <p class="mt-2 text-[10px] text-slate-400 font-medium text-center px-2">Tiada Imej<br>Disertakan</p>
+                `;
+            }
+
+            const detailsGrid = document.getElementById('modal-details');
+            const fields = [
+                { label: 'Siri (S/N)', value: item['Serial No'] },
+                { label: 'Kategori', value: item['Category'] },
+                { label: 'Status Penentukuran', value: `<span class="px-2 py-1 text-[10px] font-bold rounded-full bg-${item._statusColor}-100 text-${item._statusColor}-800 border border-${item._statusColor}-200">${item._status}</span>`, isHtml: true },
+                { label: 'Tarikh Luput', value: item['Expired Date'] },
+                { label: 'Dikalibrasi Oleh', value: item['Calibration By'] },
+                { label: 'Asal Lokasi', value: item['Location Origin'] },
+                { label: 'Lokasi Semasa', value: item['Current Location'] },
+                { label: 'Pemegang Semasa', value: item['Current Holder'] },
+                { label: 'Audit Terakhir', value: item['Last Audit Date'] || item['Last Audit'] },
+                { label: 'Status Audit', value: item['Audit Status'] },
+                { label: 'Catatan (Remark)', value: item['Remark'], full: true }
+            ];
+
+            detailsGrid.innerHTML = fields.map(f => {
+                if(!f.value && f.value !== 0 && f.value !== '') return '';
+                const colSpan = f.full ? 'col-span-2' : 'col-span-1';
+                const valHTML = f.isHtml ? f.value : `<p class="font-semibold text-slate-800 mt-0.5 whitespace-pre-wrap">${f.value || '-'}</p>`;
+                return `
+                    <div class="${colSpan} bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                        <p class="text-[9px] font-bold text-brand-600/80 uppercase tracking-wider">${f.label}</p>
+                        ${valHTML}
+                    </div>
+                `;
+            }).join('');
+
+            const certContainer = document.getElementById('modal-cert-container');
+            const certUrl = item['Cert'];
+            let buttonsHtml = '<div class="flex gap-2">';
+            
+            if (certUrl && certUrl.trim() !== '' && certUrl.toLowerCase() !== 'n/a') {
+                buttonsHtml += `
+                    <button onclick="openPdfModal('${certUrl}')" class="flex items-center space-x-2 px-4 py-2 bg-brand-600 text-white hover:bg-brand-500 active:scale-95 font-semibold rounded-lg transition-all shadow-md text-sm">
+                        <i data-lucide="file-badge" class="w-4 h-4"></i>
+                        <span>Lihat Sijil PDF</span>
+                    </button>
+                `;
+            } else {
+                buttonsHtml += `
+                    <button disabled class="flex items-center space-x-2 px-4 py-2 bg-slate-100 text-slate-400 font-semibold rounded-lg border border-slate-200 cursor-not-allowed text-sm">
+                        <i data-lucide="file-x-2" class="w-4 h-4"></i>
+                        <span>Tiada Sijil</span>
+                    </button>
+                `;
+            }
+
+            const isAuditView = !document.getElementById('view-audit').classList.contains('hidden');
+            if(!isAuditView) {
+                buttonsHtml += `
+                    <button onclick="openEditModal(${item._id})" class="flex items-center space-x-2 px-4 py-2 bg-amber-500 text-white hover:bg-amber-400 active:scale-95 font-semibold rounded-lg transition-all shadow-md text-sm">
+                        <i data-lucide="edit-3" class="w-4 h-4"></i>
+                        <span>Kemaskini</span>
+                    </button>
+                </div>`;
+            } else {
+                buttonsHtml += `</div>`;
+            }
+            certContainer.innerHTML = buttonsHtml;
+
+            const auditContainer = document.getElementById('modal-audit-action-container');
+            
+            let lastAuditVal = item['Last Audit Date'] || item['Last Audit'];
+            let isAudited = item._auditSessionDone || isAuditedThisMonth(lastAuditVal);
+
+            if (isAuditView && currentAuditTabView === 'pending' && !isAudited) {
+                auditContainer.classList.remove('hidden');
+                auditContainer.innerHTML = `
+                    <div class="p-4 md:p-6 bg-slate-100 flex flex-col gap-3">
+                        <h4 class="text-sm font-bold text-slate-700 flex items-center gap-2 mb-1">
+                            <i data-lucide="clipboard-signature" class="w-4 h-4 text-brand-500"></i> Tindakan Pengesahan Audit
+                        </h4>
+                        <div class="grid grid-cols-3 gap-3" id="audit-btn-group-${item._id}">
+                            <button onclick="submitAuditToServer(${item._id}, 'Baik')" class="flex flex-col items-center justify-center py-3 bg-emerald-50 text-emerald-600 rounded-xl border-2 border-emerald-100 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 hover:shadow-md transition-all group">
+                                <i data-lucide="check-circle-2" class="w-6 h-6 mb-1.5 group-hover:scale-110 transition-transform"></i>
+                                <span class="text-[11px] font-bold uppercase tracking-wider">Aset Baik</span>
+                            </button>
+                            <button onclick="showAuditRemarkForm(${item._id}, 'Rosak')" class="flex flex-col items-center justify-center py-3 bg-amber-50 text-amber-600 rounded-xl border-2 border-amber-100 hover:bg-amber-500 hover:text-white hover:border-amber-500 hover:shadow-md transition-all group">
+                                <i data-lucide="alert-triangle" class="w-6 h-6 mb-1.5 group-hover:scale-110 transition-transform"></i>
+                                <span class="text-[11px] font-bold uppercase tracking-wider">Rosak</span>
+                            </button>
+                            <button onclick="showAuditRemarkForm(${item._id}, 'Hilang')" class="flex flex-col items-center justify-center py-3 bg-rose-50 text-rose-600 rounded-xl border-2 border-rose-100 hover:bg-rose-500 hover:text-white hover:border-rose-500 hover:shadow-md transition-all group">
+                                <i data-lucide="x-circle" class="w-6 h-6 mb-1.5 group-hover:scale-110 transition-transform"></i>
+                                <span class="text-[11px] font-bold uppercase tracking-wider">Hilang</span>
+                            </button>
+                        </div>
+                        <div id="audit-form-area-${item._id}"></div>
+                    </div>
+                `;
+            } else {
+                auditContainer.classList.add('hidden');
+                auditContainer.innerHTML = '';
+            }
+
+            lucide.createIcons();
+
+            const modal = document.getElementById('asset-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                document.getElementById('asset-modal-content').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('asset-modal');
+            modal.classList.add('opacity-0');
+            document.getElementById('asset-modal-content').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300); 
+        }
+
+        function openPdfModal(url) {
+            let embedUrl = url;
+            if (url.includes('drive.google.com') && url.includes('/view')) {
+                embedUrl = url.replace(/\/view.*/, '/preview');
+            }
+            
+            document.getElementById('pdf-iframe').src = embedUrl;
+            
+            const pdfModal = document.getElementById('pdf-modal');
+            pdfModal.classList.remove('hidden');
+            setTimeout(() => {
+                pdfModal.classList.remove('opacity-0');
+                document.getElementById('pdf-modal-content').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closePdfModal() {
+            const pdfModal = document.getElementById('pdf-modal');
+            pdfModal.classList.add('opacity-0');
+            document.getElementById('pdf-modal-content').classList.add('scale-95');
+            setTimeout(() => {
+                pdfModal.classList.add('hidden');
+                document.getElementById('pdf-iframe').src = ''; 
+            }, 300);
+        }
+
+        function openAuditImageModal(id, event) {
+            if(event) event.stopPropagation(); 
+
+            const item = globalData.find(d => d._id === id);
+            if(!item) return;
+
+            const remark = item['Remark'] || item._simulatedRemark || 'Tiada catatan diberikan.';
+            document.getElementById('audit-img-modal-remark').innerText = remark;
+
+            const imgContainer = document.getElementById('audit-img-modal-container');
+            
+            const keys = Object.keys(item).filter(k => !k.startsWith('_'));
+            let driveUrl = item['Audit Img'] || item['Audit Image'] || item['Audit Picture'] || '';
+            if(!driveUrl && keys.length > 15) {
+                driveUrl = item[keys[15]] || ''; 
+            }
+
+            const driveId = getDriveId(driveUrl);
+
+            if (driveId) {
+                const directImgUrl = `https://lh3.googleusercontent.com/d/${driveId}`;
+                imgContainer.innerHTML = `<img src="${directImgUrl}" class="w-full h-full object-contain" alt="Bukti Audit" onerror="this.src='https://placehold.co/400x300/f8fafc/94a3b8?text=Imej+Tidak+Ditemui'" />`;
+            } else {
+                imgContainer.innerHTML = `
+                    <div class="flex flex-col items-center justify-center text-slate-400 p-6">
+                        <i data-lucide="image-off" class="w-12 h-12 mb-2 opacity-50"></i>
+                        <p class="text-xs font-medium text-center">Tiada gambar bukti dilampirkan<br>dalam rekod ini (Column P).</p>
+                    </div>
+                `;
+            }
+
+            const modal = document.getElementById('audit-img-modal');
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                document.getElementById('audit-img-modal-content').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeAuditImageModal() {
+            const modal = document.getElementById('audit-img-modal');
+            modal.classList.add('opacity-0');
+            document.getElementById('audit-img-modal-content').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.getElementById('audit-img-modal-container').innerHTML = ''; 
+            }, 300);
+        }
+
+        function openAddModal() {
+            const modal = document.getElementById('add-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                document.getElementById('add-modal-content').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeAddModal() {
+            const modal = document.getElementById('add-modal');
+            modal.classList.add('opacity-0');
+            document.getElementById('add-modal-content').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function openEditModal(id) {
+            const item = globalData.find(d => d._id === id);
+            if(!item) return;
+            
+            currentEditingAsset = item; 
+            closeModal();
+
+            let dateValue = '';
+            if(item['Expired Date'] && item['Expired Date'].trim() !== '' && item['Expired Date'] !== 'N/A') {
+                const dParts = item['Expired Date'].split('/');
+                if(dParts.length === 3) {
+                    dateValue = `${dParts[2]}-${dParts[1].padStart(2, '0')}-${dParts[0].padStart(2, '0')}`;
+                } else {
+                    dateValue = item['Expired Date']; 
+                }
+            }
+
+            document.getElementById('edit-category').value = item['Category'] || '';
+            document.getElementById('edit-location').value = item['Location Origin'] || '';
+            document.getElementById('edit-make').value = item['Make'] || '';
+            document.getElementById('edit-model').value = item['Model'] || '';
+            document.getElementById('edit-serial').value = item['Serial No'] || '';
+            document.getElementById('edit-expired').value = dateValue;
+            document.getElementById('edit-calib').value = item['Calibration By'] || '';
+            
+            document.getElementById('edit-cert').value = '';
+            document.getElementById('edit-pic').value = '';
+
+            setTimeout(() => {
+                const modal = document.getElementById('edit-modal');
+                modal.classList.remove('hidden');
+                setTimeout(() => {
+                    modal.classList.remove('opacity-0');
+                    document.getElementById('edit-modal-content').classList.remove('scale-95');
+                }, 10);
+            }, 300); 
+        }
+
+        function closeEditModal() {
+            const modal = document.getElementById('edit-modal');
+            modal.classList.add('opacity-0');
+            document.getElementById('edit-modal-content').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                currentEditingAsset = null;
+            }, 300);
+        }
+
+        async function submitEditAsset(e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('btn-submit-edit');
+            const cancelBtn = document.getElementById('btn-cancel-edit');
+            
+            const rawDate = document.getElementById('edit-expired').value;
+            let formattedDate = rawDate;
+            if (rawDate) {
+                const [y, m, d] = rawDate.split('-');
+                formattedDate = `${d}/${m}/${y}`;
+            }
+
+            submitBtn.disabled = true;
+            cancelBtn.disabled = true;
+            submitBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-2"></i> Mengemaskini...`;
+            lucide.createIcons();
+            showToast("Sedang memproses kemaskini...", "info");
+
+            try {
+                const certFile = document.getElementById('edit-cert').files[0];
+                const picFile = document.getElementById('edit-pic').files[0];
+
+                let pdfBase64 = '', pdfMimeType = '', pdfName = '';
+                if (certFile) {
+                    pdfBase64 = await getBase64(certFile);
+                    pdfMimeType = certFile.type;
+                    pdfName = certFile.name;
+                }
+
+                let imgBase64 = '', imgMimeType = '', imgName = '';
+                if (picFile) {
+                    imgBase64 = await getBase64(picFile);
+                    imgMimeType = picFile.type;
+                    imgName = picFile.name;
+                }
+
+                const payloadData = {
+                    action: 'edit',
+                    rowId: currentEditingAsset._rowId, 
+                    no: currentEditingAsset['No.'] || currentEditingAsset['No'], 
+                    
+                    category: document.getElementById('edit-category').value,
+                    make: document.getElementById('edit-make').value,
+                    model: document.getElementById('edit-model').value,
+                    serialNo: document.getElementById('edit-serial').value,
+                    location: document.getElementById('edit-location').value,
+                    expiredDate: formattedDate,
+                    calibBy: document.getElementById('edit-calib').value,
+                    
+                    existingPdf: currentEditingAsset['Cert'] || '',
+                    existingImg: currentEditingAsset['Test Set Picture'] || '',
+                    
+                    pdfBase64: pdfBase64,
+                    pdfMimeType: pdfMimeType,
+                    pdfName: pdfName,
+                    
+                    imgBase64: imgBase64,
+                    imgMimeType: imgMimeType,
+                    imgName: imgName
+                };
+
+                const response = await fetch(APP_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payloadData)
+                });
+
+                const result = await response.json();
+
+                if (result.status === "success") {
+                    showCustomAlert("Maklumat aset berjaya dikemaskini dalam pangkalan data!");
+                    closeEditModal();
+                    
+                    setTimeout(() => {
+                        loadData();
+                    }, 2000);
+                } else {
+                    throw new Error(result.message);
+                }
+
+            } catch (error) {
+                console.error("Ralat Penghantaran:", error);
+                showCustomAlert("Ralat berlaku ketika mengemaskini data: " + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                cancelBtn.disabled = false;
+                submitBtn.innerHTML = `Kemaskini`;
+            }
+        }
+
+        function getBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => {
+                    let encoded = reader.result.toString().replace(/^data:(.*,)?/, '');
+                    if ((encoded.length % 4) > 0) {
+                        encoded += '='.repeat(4 - (encoded.length % 4));
+                    }
+                    resolve(encoded);
+                };
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        async function submitNewAsset(e) {
+            e.preventDefault(); 
+
+            const submitBtn = document.getElementById('btn-submit-add');
+            const cancelBtn = document.getElementById('btn-cancel-add');
+            
+            const rawDate = document.getElementById('add-expired').value;
+            let formattedDate = rawDate;
+            if (rawDate) {
+                const [y, m, d] = rawDate.split('-');
+                formattedDate = `${d}/${m}/${y}`;
+            }
+
+            submitBtn.disabled = true;
+            cancelBtn.disabled = true;
+            submitBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-2"></i> Menyimpan...`;
+            lucide.createIcons();
+            showToast("Sedang memuat naik aset dan fail ke pelayan...", "info");
+
+            try {
+                const certFile = document.getElementById('add-cert').files[0];
+                const picFile = document.getElementById('add-pic').files[0];
+
+                let pdfBase64 = '', pdfMimeType = '', pdfName = '';
+                if (certFile) {
+                    pdfBase64 = await getBase64(certFile);
+                    pdfMimeType = certFile.type;
+                    pdfName = certFile.name;
+                }
+
+                let imgBase64 = '', imgMimeType = '', imgName = '';
+                if (picFile) {
+                    imgBase64 = await getBase64(picFile);
+                    imgMimeType = picFile.type;
+                    imgName = picFile.name;
+                }
+
+                const payloadData = {
+                    category: document.getElementById('add-category').value,
+                    make: document.getElementById('add-make').value,
+                    model: document.getElementById('add-model').value,
+                    serialNo: document.getElementById('add-serial').value,
+                    location: document.getElementById('add-location').value,
+                    expiredDate: formattedDate,
+                    calibBy: document.getElementById('add-calib').value,
+                    
+                    pdfBase64: pdfBase64,
+                    pdfMimeType: pdfMimeType,
+                    pdfName: pdfName,
+                    
+                    imgBase64: imgBase64,
+                    imgMimeType: imgMimeType,
+                    imgName: imgName
+                };
+
+                const response = await fetch(APP_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'text/plain;charset=utf-8', 
+                    },
+                    body: JSON.stringify(payloadData)
+                });
+
+                const result = await response.json();
+
+                if (result.status === "success") {
+                    showCustomAlert("Aset baharu berserta lampiran dokumen berjaya direkodkan ke dalam pangkalan data induk (Google Sheets) secara rasmi.");
+                    e.target.reset(); 
+                    closeAddModal();
+                    
+                    setTimeout(() => {
+                        loadData();
+                    }, 2000);
+                } else {
+                    throw new Error(result.message);
+                }
+
+            } catch (error) {
+                console.error("Ralat Penghantaran:", error);
+                showCustomAlert("Ralat berlaku ketika menyimpan data: " + error.message);
+            } finally {
+                submitBtn.disabled = false;
+                cancelBtn.disabled = false;
+                submitBtn.innerHTML = `Simpan Aset`;
+            }
+        }
+    </script>
+</body>
+</html>
