@@ -8,7 +8,6 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -29,7 +28,6 @@
         }
     </script>
 
-    <!-- Chart.js & PapaParse & Lucide Icons -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -68,6 +66,40 @@
 </head>
 <body class="text-slate-800 antialiased h-screen flex flex-col md:flex-row overflow-hidden selection:bg-brand-500 selection:text-white">
 
+    <!-- Login Screen -->
+    <div id="login-screen" class="fixed inset-0 z-[200] bg-slate-900 flex items-center justify-center p-4 transition-opacity duration-300">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col transform scale-100 transition-transform duration-300" id="login-card">
+            <div class="p-8 text-center bg-slate-50 border-b border-slate-100">
+                <div class="w-16 h-16 bg-brand-100 text-brand-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm rotate-3">
+                    <i data-lucide="shield-check" class="w-8 h-8 -rotate-3"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-slate-800">Log Masuk AMS</h2>
+                <p class="text-sm text-slate-500 mt-1">Sistem Pengurusan Aset Eng</p>
+            </div>
+            <div class="p-8">
+                <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-5">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1.5">ID Pekerja <span class="text-rose-500">*</span></label>
+                        <div class="relative">
+                            <i data-lucide="user" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                            <input type="text" id="login-id" required placeholder="Masukkan ID" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-600 mb-1.5">Kata Laluan <span class="text-rose-500">*</span></label>
+                        <div class="relative">
+                            <i data-lucide="lock" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                            <input type="password" id="login-pwd" required placeholder="Masukkan kata laluan" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition text-sm">
+                        </div>
+                    </div>
+                    <button type="submit" id="btn-login" class="w-full flex items-center justify-center px-4 py-2.5 bg-brand-600 text-white font-bold rounded-xl shadow-md hover:bg-brand-500 hover:-translate-y-0.5 transition-all active:scale-95">
+                        Log Masuk
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- Sidebar (Desktop) / Hidden on Mobile -->
     <aside class="hidden md:flex flex-col w-64 bg-slate-900 text-slate-300 h-full border-r border-slate-800 shadow-xl z-20">
         <div class="p-6 flex items-center space-x-3 text-white border-b border-slate-800">
@@ -75,7 +107,7 @@
             <h1 class="text-xl font-bold tracking-tight leading-tight">EngAsset<br><span class="text-sm text-slate-400 font-normal">Management</span></h1>
         </div>
         <nav class="flex-1 px-4 py-6 space-y-2">
-            <button onclick="switchTab('dashboard')" id="nav-desktop-dashboard" class="nav-btn-desktop w-full flex items-center space-x-3 px-4 py-3 rounded-lg bg-brand-600 text-white transition-colors">
+            <button onclick="switchTab('dashboard')" id="nav-desktop-dashboard" class="nav-btn-desktop w-full flex items-center space-x-3 px-4 py-3 rounded-lg bg-brand-600 text-white shadow-md transition-colors">
                 <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
                 <span class="font-medium">Papan Pemuka</span>
             </button>
@@ -97,6 +129,14 @@
                 <span id="recalib-badge-desktop" class="absolute right-4 w-2 h-2 rounded-full bg-rose-500 hidden animate-pulse"></span>
             </button>
         </nav>
+        <div id="desktop-user-profile" class="p-4 border-t border-slate-800 flex items-center gap-3 hidden">
+            <img id="desktop-user-pic" src="" class="w-10 h-10 rounded-full object-cover border border-slate-600">
+            <div class="flex-1 min-w-0">
+                <p id="desktop-user-name" class="text-sm font-bold text-white truncate"></p>
+                <p id="desktop-user-role" class="text-[10px] text-brand-400 font-bold uppercase tracking-wider truncate"></p>
+            </div>
+            <button onclick="logout()" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition" title="Log Keluar"><i data-lucide="log-out" class="w-4 h-4"></i></button>
+        </div>
         <div class="p-4 border-t border-slate-800 text-xs text-center text-slate-500">
             V1.0.0 &copy; 2026 PWA Eng.
         </div>
@@ -110,9 +150,15 @@
                 <i data-lucide="wrench" class="w-6 h-6 text-brand-500"></i>
                 <h1 class="text-lg font-bold">EngAsset</h1>
             </div>
-            <button onclick="loadData()" class="p-2 rounded-full bg-slate-800 text-brand-400 hover:bg-slate-700 active:scale-95 transition">
-                <i data-lucide="refresh-cw" class="w-5 h-5"></i>
-            </button>
+            <div class="flex items-center gap-3">
+                <button onclick="logout()" class="hidden p-1.5 rounded-full bg-slate-800 text-rose-400 hover:bg-slate-700 transition" id="mobile-logout-btn">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                </button>
+                <img id="mobile-user-pic" src="" class="w-8 h-8 rounded-full object-cover border border-slate-600 hidden">
+                <button onclick="loadData()" class="p-2 rounded-full bg-slate-800 text-brand-400 hover:bg-slate-700 active:scale-95 transition">
+                    <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+                </button>
+            </div>
         </header>
 
         <!-- Loader -->
@@ -121,24 +167,20 @@
             <p class="text-slate-600 font-medium animate-pulse">Menarik data dari satelit (Google Sheets)...</p>
         </div>
 
-        <!-- Scrollable Views Container -->
         <div class="flex-1 overflow-y-auto no-scrollbar p-4 md:p-8 pb-32 md:pb-8 bg-slate-50 relative" id="main-scroll-area">
             
-            <!-- VIEW: DASHBOARD -->
             <div id="view-dashboard" class="view-section space-y-6">
-                
                 <div class="flex justify-between items-end">
                     <div>
                         <h2 class="text-2xl font-bold text-slate-800">Papan Pemuka</h2>
                         <p class="text-sm text-slate-500">Analisis Penentukuran & Audit Aset</p>
                     </div>
-                    <button onclick="loadData()" class="hidden md:flex items-center space-x-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg shadow-sm hover:bg-slate-50 transition">
+                    <button onclick="loadData()" class="hidden md:flex items-center space-x-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg shadow-sm hover:bg-slate-50 active:scale-95 transition">
                         <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                         <span class="text-sm font-medium">Segar Semula</span>
                     </button>
                 </div>
 
-                <!-- KPI Cards -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div onclick="navigateAndFilter('Semua')" class="cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
                         <span class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Jumlah Aset</span>
@@ -161,12 +203,8 @@
                     </div>
                 </div>
 
-                <!-- Charts Area: Responsive Grid -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    
-                    <!-- Left Column: Stacked Charts (Penentukuran & Audit) -->
                     <div class="col-span-1 flex flex-col gap-6">
-                        <!-- Chart 1: Penentukuran -->
                         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
                             <h3 class="text-sm font-bold text-slate-700 mb-3 border-b pb-2">Status Penentukuran</h3>
                             <div class="relative h-48 w-full flex justify-center">
@@ -174,7 +212,6 @@
                             </div>
                         </div>
                         
-                        <!-- Chart 2: Status Pinjaman -->
                         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
                             <h3 class="text-sm font-bold text-slate-700 mb-3 border-b pb-2">Status Pinjaman Aset</h3>
                             <div class="relative h-48 w-full flex justify-center">
@@ -182,11 +219,8 @@
                             </div>
                         </div>
 
-                        <!-- Ringkasan KAD Audit Bulanan -->
                         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
                             <h3 class="text-sm font-bold text-slate-700 mb-3 border-b pb-2">Ringkasan Audit (Bulan Semasa)</h3>
-                            
-                            <!-- Main KPI: Selesai & Belum -->
                             <div class="grid grid-cols-2 gap-3 mb-3">
                                 <div class="bg-brand-50 p-3 rounded-lg border border-brand-100 flex flex-col items-center justify-center">
                                     <span class="text-2xl font-bold text-brand-600" id="kpi-audit-done">0</span>
@@ -197,8 +231,6 @@
                                     <span class="text-[10px] uppercase font-bold text-slate-600 mt-1">Belum Audit</span>
                                 </div>
                             </div>
-                            
-                            <!-- Breakdown KPI: Baik, Rosak, Hilang -->
                             <div class="grid grid-cols-3 gap-2">
                                 <div class="bg-emerald-50 py-2 rounded-lg border border-emerald-100 text-center flex flex-col justify-center">
                                     <span class="text-lg font-bold text-emerald-600 leading-tight" id="kpi-audit-baik">0</span>
@@ -216,13 +248,12 @@
                         </div>
                     </div>
 
-                    <!-- Right Column: Tindakan Segera -->
                     <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm col-span-1 lg:col-span-2 flex flex-col h-full min-h-[400px]">
                         <h3 class="text-base font-bold text-slate-700 mb-4 border-b pb-2 flex justify-between items-center">
                             Tindakan Segera
                             <span class="text-xs bg-rose-50 text-rose-600 font-semibold px-2.5 py-1 rounded-full"><span id="action-total-count">0</span> Aset Terlibat</span>
                         </h3>
-                        <div id="action-list" class="flex-1 overflow-y-auto pr-2 space-y-3">
+                        <div id="action-list" class="flex-1 overflow-y-auto pr-2 space-y-3 no-scrollbar">
                             <!-- Injected via JS -->
                         </div>
                         <div id="action-pagination" class="hidden mt-4 pt-3 border-t flex justify-between items-center text-sm">
@@ -233,7 +264,6 @@
                     </div>
                 </div>
 
-                <!-- Asset by Location Origin -->
                 <div class="pt-2">
                     <h3 class="text-base font-bold text-slate-700 mb-4 border-b pb-2">Aset Mengikut Lokasi Semasa</h3>
                     <div id="location-cards" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -242,7 +272,6 @@
                 </div>
             </div>
 
-            <!-- VIEW: ASSETS LIST -->
             <div id="view-assets" class="view-section hidden space-y-4">
                 <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
                     <div class="flex justify-between items-center w-full md:w-auto">
@@ -250,7 +279,7 @@
                             <h2 class="text-2xl font-bold text-slate-800">Senarai Aset</h2>
                             <p class="text-sm text-slate-500">Pangkalan data induk inventori</p>
                         </div>
-                        <button onclick="openAddModal()" class="flex items-center space-x-1.5 md:space-x-2 px-3 md:px-4 py-2 bg-brand-600 text-white rounded-lg shadow-sm hover:bg-brand-500 transition-colors ml-2 md:ml-4 h-fit whitespace-nowrap">
+                        <button id="btn-tambah-aset" onclick="openAddModal()" class="flex items-center space-x-1.5 md:space-x-2 px-3 md:px-4 py-2 bg-brand-600 text-white rounded-lg shadow-sm hover:bg-brand-500 transition-colors ml-2 md:ml-4 h-fit whitespace-nowrap">
                             <i data-lucide="plus-circle" class="w-4 h-4"></i>
                             <span class="text-sm font-semibold hidden sm:inline">Tambah Aset</span>
                             <span class="text-sm font-semibold sm:hidden">Tambah</span>
@@ -260,7 +289,7 @@
                     <div class="grid grid-cols-1 sm:grid-cols-2 xl:flex xl:flex-row gap-3 w-full xl:w-auto">
                         <div class="relative w-full xl:w-64 flex-shrink-0">
                             <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
-                            <input type="text" id="searchInput" onkeyup="filterAssets()" placeholder="Cari S/N, Model..." class="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                            <input type="text" id="searchInput" onkeyup="filterAssets()" placeholder="Cari S/N, Model..." class="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition shadow-sm">
                         </div>
                         
                         <div class="relative w-full xl:w-48 flex-shrink-0">
@@ -277,7 +306,6 @@
                             </div>
                         </div>
 
-                        <!-- Dropdown Lokasi -->
                         <div class="relative w-full xl:w-48 flex-shrink-0">
                             <select id="locationFilter" onchange="handleLocationDropdownChange()" class="w-full appearance-none pl-4 pr-10 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition font-semibold text-slate-700 shadow-sm cursor-pointer truncate">
                                 <option value="Semua Lokasi">Semua Lokasi</option>
@@ -287,7 +315,6 @@
                             </div>
                         </div>
 
-                        <!-- Dropdown Status Pinjaman -->
                         <div class="relative w-full xl:w-48 flex-shrink-0">
                             <select id="pinjamanFilter" onchange="handlePinjamanDropdownChange()" class="w-full appearance-none pl-4 pr-10 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition font-semibold text-slate-700 shadow-sm cursor-pointer truncate">
                                 <option value="Semua Pinjaman">Semua Pinjaman</option>
@@ -301,7 +328,6 @@
                     </div>
                 </div>
 
-                <!-- Desktop Table View -->
                 <div class="hidden md:block bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-slate-200 text-sm">
@@ -322,23 +348,21 @@
                     </div>
                 </div>
 
-                <!-- Mobile Card View -->
                 <div id="asset-cards" class="md:hidden grid grid-cols-1 gap-4 pb-4">
                     <!-- Injected via JS -->
                 </div>
             </div>
 
-            <!-- VIEW: MOBILITI ASET -->
             <div id="view-mobiliti" class="view-section hidden space-y-4">
                 <div class="flex justify-between items-end">
                     <div>
                         <h2 class="text-2xl font-bold text-slate-800">Mobiliti Aset</h2>
                         <p class="text-sm text-slate-500">Pilih aset untuk dibawa ke tapak (site)</p>
                     </div>
-                    <button onclick="openMobilitiCart()" class="relative flex items-center space-x-2 px-3 md:px-4 py-2 bg-brand-600 text-white rounded-lg shadow-sm hover:bg-brand-500 transition-colors">
+                    <button onclick="openMobilitiCart()" class="relative flex items-center space-x-2 px-3 md:px-4 py-2 bg-brand-600 text-white rounded-lg shadow-sm hover:bg-brand-500 active:scale-95 transition-colors">
                         <i data-lucide="shopping-cart" class="w-4 h-4"></i>
                         <span class="text-sm font-semibold hidden md:inline">Troli Aset</span>
-                        <span id="mobiliti-cart-count" class="absolute -top-2 -right-2 w-5 h-5 bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white hidden">0</span>
+                        <span id="mobiliti-cart-count" class="absolute -top-2 -right-2 w-5 h-5 bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white hidden shadow-sm">0</span>
                     </button>
                 </div>
 
@@ -352,9 +376,7 @@
                 </div>
             </div>
 
-            <!-- VIEW: AUDIT BULANAN -->
             <div id="view-audit" class="view-section hidden space-y-6">
-                <!-- Header & Progress -->
                 <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
                     <div class="absolute right-0 top-0 w-3 h-full bg-brand-500"></div>
                     <div class="flex justify-between items-end mb-4">
@@ -363,28 +385,24 @@
                             <p class="text-sm text-slate-500 font-medium mt-1" id="audit-month-label">Bulan Semasa</p>
                         </div>
                     </div>
-                    <!-- Progress Bar -->
                     <div class="space-y-2 mt-6">
                         <div class="flex justify-between text-sm font-bold text-slate-700">
                             <span>Prestasi Audit Semasa</span>
-                            <span id="audit-progress-text" class="text-brand-600 bg-brand-50 px-2 py-0.5 rounded">0 / 0</span>
+                            <span id="audit-progress-text" class="text-brand-600 bg-brand-50 px-2 py-0.5 rounded border border-brand-100">0 / 0</span>
                         </div>
-                        <div class="w-full bg-slate-100 rounded-full h-3.5 overflow-hidden border border-slate-200">
+                        <div class="w-full bg-slate-100 rounded-full h-3.5 overflow-hidden border border-slate-200 shadow-inner">
                             <div id="audit-progress-bar" class="bg-gradient-to-r from-brand-400 to-brand-600 h-full rounded-full transition-all duration-700 ease-out" style="width: 0%"></div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Search Filter for Audit -->
                 <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 w-full">
-                    <!-- Sub Tabs Filter -->
                     <div class="flex space-x-2 bg-slate-200/60 p-1 rounded-xl w-full lg:w-fit flex-shrink-0">
                         <button id="tab-audit-pending" onclick="setAuditView('pending')" class="flex-1 sm:flex-none px-5 py-2 text-sm font-bold rounded-lg bg-white text-slate-800 shadow-sm transition">Perlu Audit</button>
                         <button id="tab-audit-done" onclick="setAuditView('done')" class="flex-1 sm:flex-none px-5 py-2 text-sm font-bold rounded-lg text-slate-500 hover:text-slate-800 hover:bg-white/50 transition">Selesai</button>
                     </div>
 
                     <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
-                        <!-- Audit Status Filter (Hidden on Pending Default) -->
                         <div id="audit-status-filter-container" class="hidden relative w-full sm:w-48 flex-shrink-0">
                             <select id="auditStatusFilter" onchange="renderAuditList()" class="w-full appearance-none pl-4 pr-10 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition font-semibold text-slate-700 shadow-sm cursor-pointer truncate">
                                 <option value="Semua">Semua Status</option>
@@ -396,7 +414,6 @@
                             </div>
                         </div>
 
-                        <!-- Search Input -->
                         <div class="relative w-full sm:w-64 flex-shrink-0">
                             <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
                             <input type="text" id="auditSearchInput" onkeyup="renderAuditList()" placeholder="Cari S/N, Model..." class="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition shadow-sm">
@@ -404,29 +421,26 @@
                     </div>
                 </div>
 
-                <!-- Audit List -->
                 <div id="audit-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
                     <!-- Injected via JS -->
                 </div>
             </div>
 
-            <!-- VIEW: RE-CALIBRATE -->
             <div id="view-recalibrate" class="view-section hidden space-y-6">
                 <div>
                     <h2 class="text-2xl font-bold text-slate-800">Penentukuran Semula</h2>
                     <p class="text-sm text-slate-500">Kemas kini sijil bagi aset yang hampir / telah luput</p>
                 </div>
 
-                <!-- Paparan 1: Senarai Carian -->
                 <div id="recalib-list-container" class="space-y-4 transition-all duration-300">
                     <div class="relative w-full max-w-md">
                         <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
                         <input type="text" id="recalibSearchInput" onkeyup="filterRecalib()" placeholder="Cari S/N, Model, Make..." class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition shadow-sm">
                     </div>
 
-                    <div class="bg-blue-50 border border-blue-100 text-blue-700 px-4 py-3 rounded-xl flex gap-3 text-sm">
+                    <div class="bg-blue-50 border border-blue-100 text-blue-700 px-4 py-3 rounded-xl flex gap-3 text-sm shadow-sm">
                         <i data-lucide="info" class="w-5 h-5 flex-shrink-0 text-blue-500"></i>
-                        <p>Hanya aset berstatus <strong>Hampir Luput</strong> dan <strong>Telah Luput</strong> sahaja dipaparkan di sini untuk penentukuran semula.</p>
+                        <p>Hanya aset berstatus <strong class="font-bold">Hampir Luput</strong> dan <strong class="font-bold">Telah Luput</strong> sahaja dipaparkan di sini untuk penentukuran semula.</p>
                     </div>
 
                     <div id="recalib-asset-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
@@ -434,13 +448,13 @@
                     </div>
                 </div>
 
-                <!-- Paparan 2: Borang Kemaskini Kalibrasi -->
+                <!-- Recalibration Form -->
                 <div id="recalib-form-container" class="hidden bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden transition-all duration-300">
                     <div class="p-4 md:p-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
                         <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
                             <i data-lucide="file-check-2" class="w-5 h-5 text-brand-500"></i> Kemas Kini Sijil
                         </h3>
-                        <button onclick="cancelRecalib()" class="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg shadow-sm hover:bg-slate-50 transition text-xs font-semibold flex items-center gap-1">
+                        <button onclick="cancelRecalib()" class="px-3 py-1.5 bg-white border border-slate-200 text-slate-600 rounded-lg shadow-sm hover:bg-slate-50 active:scale-95 transition text-xs font-semibold flex items-center gap-1">
                             <i data-lucide="arrow-left" class="w-3 h-3"></i> Kembali
                         </button>
                     </div>
@@ -475,11 +489,11 @@
                                     </div>
                                     <div class="sm:col-span-2 bg-blue-50/50 p-3 rounded-lg border border-blue-100">
                                         <label class="block text-xs font-bold text-slate-600 mb-1">Muat Naik Sijil Penentukuran Baharu (PDF) <span class="text-rose-500">*</span></label>
-                                        <input type="file" id="rec-input-cert" accept=".pdf" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 transition cursor-pointer">
+                                        <input type="file" id="rec-input-cert" accept=".pdf" required class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 transition cursor-pointer">
                                     </div>
                                 </div>
                                 <div class="pt-4 border-t border-slate-100 flex justify-end gap-2">
-                                    <button type="button" onclick="cancelRecalib()" class="px-5 py-2.5 bg-white text-slate-600 border border-slate-200 font-semibold rounded-lg shadow-sm hover:bg-slate-50 transition">Batal</button>
+                                    <button type="button" onclick="cancelRecalib()" class="px-5 py-2.5 bg-white text-slate-600 border border-slate-200 font-semibold rounded-lg shadow-sm hover:bg-slate-50 active:scale-95 transition">Batal</button>
                                     <button type="submit" class="flex items-center justify-center min-w-[140px] px-5 py-2.5 bg-emerald-600 text-white font-semibold rounded-lg shadow-md hover:bg-emerald-500 active:scale-95 transition">Sahkan Kalibrasi</button>
                                 </div>
                             </form>
@@ -490,7 +504,6 @@
 
         </div>
 
-        <!-- Bottom Navigation (Mobile Only) -->
         <nav class="md:hidden fixed bottom-0 left-0 w-full z-30 bg-[#222222] shadow-[0_-4px_15px_rgba(0,0,0,0.2)] pb-safe">
             <div class="flex h-[64px] text-slate-400">
                 <button onclick="switchTab('dashboard')" id="nav-mobile-dashboard" class="nav-btn-mobile flex-1 flex flex-col items-center justify-center text-white bg-black transition-colors">
@@ -518,8 +531,7 @@
             </div>
         </nav>
 
-        <!-- Form Tambah Aset Baharu Modal (Popup) -->
-        <div id="add-modal" class="fixed inset-0 z-[120] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div id="add-modal" class="fixed inset-0 z-[120] hidden bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
             <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="add-modal-content">
                 <div class="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
                     <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -564,11 +576,11 @@
                             </div>
                             <div class="col-span-2">
                                 <label class="block text-xs font-bold text-slate-600 mb-1">Muat Naik Sijil PDF <span class="text-xs text-slate-400 font-normal">(Pilihan)</span></label>
-                                <input type="file" id="add-cert" accept=".pdf" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100">
+                                <input type="file" id="add-cert" accept=".pdf" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100">
                             </div>
                             <div class="col-span-2">
                                 <label class="block text-xs font-bold text-slate-600 mb-1">Muat Naik Gambar Aset <span class="text-xs text-slate-400 font-normal">(Pilihan)</span></label>
-                                <input type="file" id="add-pic" accept="image/*" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100">
+                                <input type="file" id="add-pic" accept="image/*" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100">
                             </div>
                         </div>
                     </form>
@@ -581,8 +593,7 @@
             </div>
         </div>
 
-        <!-- Form Kemaskini (Edit) Aset Modal -->
-        <div id="edit-modal" class="fixed inset-0 z-[125] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div id="edit-modal" class="fixed inset-0 z-[125] hidden bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
             <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="edit-modal-content">
                 <div class="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
                     <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -627,11 +638,11 @@
                             </div>
                             <div class="col-span-2 bg-blue-50/50 p-3 rounded-lg border border-blue-100">
                                 <label class="block text-xs font-bold text-slate-600 mb-1">Tukar Sijil PDF <span class="text-xs text-slate-400 font-normal">(Biarkan kosong jika tiada pertukaran)</span></label>
-                                <input type="file" id="edit-cert" accept=".pdf" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                <input type="file" id="edit-cert" accept=".pdf" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                             </div>
                             <div class="col-span-2 bg-blue-50/50 p-3 rounded-lg border border-blue-100">
                                 <label class="block text-xs font-bold text-slate-600 mb-1">Tukar Gambar Aset <span class="text-xs text-slate-400 font-normal">(Biarkan kosong jika tiada pertukaran)</span></label>
-                                <input type="file" id="edit-pic" accept="image/*" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none file:mr-4 file:py-1 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
+                                <input type="file" id="edit-pic" accept="image/*" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100">
                             </div>
                         </div>
                     </form>
@@ -644,8 +655,7 @@
             </div>
         </div>
 
-        <!-- Asset Details Modal (Popup) -->
-        <div id="asset-modal" class="fixed inset-0 z-[100] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div id="asset-modal" class="fixed inset-0 z-[100] hidden bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
             <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="asset-modal-content">
                 <div class="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
                     <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2" id="modal-title">
@@ -674,8 +684,7 @@
             </div>
         </div>
 
-        <!-- Mobiliti Checkout Modal -->
-        <div id="mobiliti-modal" class="fixed inset-0 z-[120] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div id="mobiliti-modal" class="fixed inset-0 z-[120] hidden bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
             <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="mobiliti-modal-content">
                 <div class="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
                     <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -685,7 +694,6 @@
                 </div>
                 
                 <div class="flex-1 overflow-y-auto p-4 md:p-6 no-scrollbar">
-                    <!-- Selected Assets List -->
                     <div class="mb-4">
                         <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Aset Terpilih (<span id="mobiliti-selected-count">0</span>)</h4>
                         <div id="mobiliti-selected-list" class="space-y-2 max-h-40 overflow-y-auto pr-2">
@@ -697,7 +705,7 @@
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label class="block text-xs font-bold text-slate-600 mb-1">Nama Peminjam <span class="text-rose-500">*</span></label>
-                                <input type="text" id="mob-nama" required placeholder="Cth: Ahmad Albab" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                                <input type="text" id="mob-nama" required readonly class="w-full px-3 py-2 bg-slate-200 border border-slate-300 rounded-lg text-slate-600 font-semibold cursor-not-allowed outline-none">
                             </div>
                             <div>
                                 <label class="block text-xs font-bold text-slate-600 mb-1">Nama Projek <span class="text-rose-500">*</span></label>
@@ -727,13 +735,12 @@
                 </div>
                 
                 <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
-                    <button type="button" onclick="closeMobilitiCart()" class="px-5 py-2.5 bg-white text-slate-600 border border-slate-200 font-semibold rounded-lg shadow-sm hover:bg-slate-50 transition">Batal</button>
+                    <button type="button" onclick="closeMobilitiCart()" class="px-5 py-2.5 bg-white text-slate-600 border border-slate-200 font-semibold rounded-lg shadow-sm hover:bg-slate-50 active:scale-95 transition">Batal</button>
                     <button type="submit" form="mobilitiForm" id="btn-submit-mobiliti" class="flex items-center justify-center min-w-[120px] px-5 py-2.5 bg-brand-600 text-white font-semibold rounded-lg shadow-md hover:bg-brand-500 active:scale-95 transition">Sahkan Pergerakan</button>
                 </div>
             </div>
         </div>
 
-        <!-- PDF Viewer Modal -->
         <div id="pdf-modal" class="fixed inset-0 z-[110] hidden bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-2 md:p-6 opacity-0 transition-opacity duration-300">
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-full md:h-[90vh] flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="pdf-modal-content">
                 <div class="flex items-center justify-between p-3 bg-slate-800 text-white shadow-md z-10">
@@ -754,7 +761,6 @@
             </div>
         </div>
 
-        <!-- Audit Image Viewer Modal -->
         <div id="audit-img-modal" class="fixed inset-0 z-[115] hidden bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="audit-img-modal-content">
                 <div class="flex items-center justify-between p-4 bg-slate-800 text-white shadow-md z-10">
@@ -770,20 +776,19 @@
                         <p class="text-xs text-slate-500 font-bold uppercase tracking-wider mb-1">Catatan (Remark)</p>
                         <p class="text-sm font-semibold text-slate-800 whitespace-pre-wrap" id="audit-img-modal-remark">-</p>
                     </div>
-                    <div class="aspect-[4/3] bg-slate-200 rounded-lg overflow-hidden border border-slate-300 relative flex items-center justify-center" id="audit-img-modal-container">
+                    <div class="aspect-[4/3] bg-slate-200 rounded-lg overflow-hidden border border-slate-300 relative flex items-center justify-center shadow-inner" id="audit-img-modal-container">
                         <!-- Image injected here -->
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Toast and Alert Containers -->
         <div id="toast-container" class="fixed top-4 right-4 md:top-8 md:right-8 z-[150] flex flex-col gap-2 pointer-events-none"></div>
 
         <div id="custom-alert-modal" class="fixed inset-0 z-[150] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
             <div class="bg-white rounded-xl shadow-xl w-full max-w-sm flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="custom-alert-content">
                 <div class="p-6 text-center">
-                    <div class="w-12 h-12 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center mx-auto mb-4">
+                    <div class="w-12 h-12 rounded-full bg-brand-100 text-brand-600 flex items-center justify-center mx-auto mb-4 shadow-sm">
                         <i data-lucide="info" class="w-6 h-6"></i>
                     </div>
                     <h3 class="text-lg font-bold text-slate-800 mb-2">Makluman</h3>
@@ -802,7 +807,13 @@
         // URL WEB APP APPS SCRIPT ANDA
         const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfHSU40sPvEYGtVNnBzvWulDT6dJGV6VbagSvOOPl6mKQCu3EHO3kjnQ4K4sXnEHdgnQ/exec';
         
+        // URL PANGKALAN DATA PEKERJA (Auth)
+        const AUTH_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQvA59NaAn4pJNF06QFAOPhTlr9iVz9GXxgC9svC3vJveeVJsE05-xa6r1VboOFuVQQwE6VLXLUgwye/pub?gid=314892623&single=true&output=csv';
+        
         let globalData = [];
+        let authData = [];
+        let currentUser = null;
+
         let myChart = null;
         let pinjamanChart = null; 
         let currentFilter = 'Semua';
@@ -822,8 +833,155 @@
         lucide.createIcons();
 
         document.addEventListener('DOMContentLoaded', () => {
-            loadData();
+            loadAuthData(); // Muat turun data pekerja dahulu
         });
+
+        function loadAuthData() {
+            const loader = document.getElementById('loader');
+            loader.classList.remove('hidden');
+            document.querySelector('#loader p').innerText = "Menyemak sistem keselamatan (Data Pekerja)...";
+
+            Papa.parse(AUTH_URL, {
+                download: true,
+                header: false, // Index 0=ID, 1=Name, 2=Role, 3=Pwd, 4=Pic
+                skipEmptyLines: true,
+                complete: function(results) {
+                    if(results.data[0] && results.data[0][0].toLowerCase() === 'id') {
+                        authData = results.data.slice(1); // Buang baris header jika wujud
+                    } else {
+                        authData = results.data;
+                    }
+                    loader.classList.add('hidden');
+                    document.querySelector('#loader p').innerText = "Menarik data dari satelit (Google Sheets)...";
+                },
+                error: function(err) {
+                    console.error("Ralat membaca data auth:", err);
+                    showToast("Gagal menyemak sistem keselamatan. Sila periksa sambungan internet.", "error");
+                    loader.classList.add('hidden');
+                }
+            });
+        }
+
+        function handleLogin(e) {
+            e.preventDefault();
+            const idInput = document.getElementById('login-id').value.trim();
+            const pwdInput = document.getElementById('login-pwd').value.trim();
+            const btnLogin = document.getElementById('btn-login');
+
+            btnLogin.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-2"></i> Mengesahkan...`;
+            btnLogin.disabled = true;
+            lucide.createIcons();
+
+            setTimeout(() => {
+                const user = authData.find(row => row[0] == idInput && row[3] == pwdInput);
+                
+                if (user) {
+                    currentUser = {
+                        id: user[0],
+                        name: user[1],
+                        designation: user[2] ? user[2].trim() : 'Staf',
+                        pic: user[4] || ''
+                    };
+                    
+                    setupUserProfile();
+                    applyAccessControl();
+
+                    const loginScreen = document.getElementById('login-screen');
+                    loginScreen.classList.add('opacity-0');
+                    document.getElementById('login-card').classList.remove('scale-100');
+                    document.getElementById('login-card').classList.add('scale-95');
+                    
+                    setTimeout(() => {
+                        loginScreen.classList.add('hidden');
+                        showToast(`Selamat datang, ${currentUser.name}!`, "info");
+                        loadData(); // Muat turun AMS Aset selepas log masuk berjaya
+                    }, 300);
+                } else {
+                    showToast("ID Pekerja atau Kata Laluan tidak sah!", "error");
+                }
+                
+                btnLogin.innerHTML = `Log Masuk`;
+                btnLogin.disabled = false;
+            }, 800); // Simulasi pengesahan
+        }
+
+        function logout() {
+            currentUser = null;
+            const loginScreen = document.getElementById('login-screen');
+            loginScreen.classList.remove('hidden');
+            setTimeout(() => {
+                loginScreen.classList.remove('opacity-0');
+                document.getElementById('login-card').classList.add('scale-100');
+                document.getElementById('login-card').classList.remove('scale-95');
+            }, 10);
+            
+            document.getElementById('loginForm').reset();
+            
+            document.getElementById('desktop-user-profile').classList.add('hidden');
+            document.getElementById('mobile-user-pic').classList.add('hidden');
+            document.getElementById('mobile-logout-btn').classList.add('hidden');
+
+            globalData = [];
+            document.getElementById('asset-tbody').innerHTML = '';
+            document.getElementById('asset-cards').innerHTML = '';
+        }
+
+        function setupUserProfile() {
+            let picUrl = currentUser.pic;
+            const driveId = getDriveId(picUrl);
+            if(driveId) {
+                picUrl = `https://lh3.googleusercontent.com/d/${driveId}`;
+            }
+
+            if(!picUrl || picUrl.trim() === '') picUrl = `https://placehold.co/100x100/0ea5e9/ffffff?text=${currentUser.name.charAt(0).toUpperCase()}`;
+
+            // Papan Pemuka Desktop
+            document.getElementById('desktop-user-profile').classList.remove('hidden');
+            document.getElementById('desktop-user-pic').src = picUrl;
+            document.getElementById('desktop-user-name').innerText = currentUser.name;
+            document.getElementById('desktop-user-role').innerText = currentUser.designation;
+
+            // Navigasi Mudah Alih
+            const mobilePic = document.getElementById('mobile-user-pic');
+            mobilePic.src = picUrl;
+            mobilePic.classList.remove('hidden');
+            document.getElementById('mobile-logout-btn').classList.remove('hidden');
+        }
+
+        function applyAccessControl() {
+            const role = currentUser.designation.toLowerCase();
+            
+            const btnAuditDesktop = document.getElementById('nav-desktop-audit');
+            const btnAuditMobile = document.getElementById('nav-mobile-audit');
+            const btnRecalibDesktop = document.getElementById('nav-desktop-recalibrate');
+            const btnRecalibMobile = document.getElementById('nav-mobile-recalibrate');
+            const btnTambahAset = document.getElementById('btn-tambah-aset');
+
+            // Reset paparan kepada lalai
+            if(btnAuditDesktop) btnAuditDesktop.classList.remove('hidden');
+            if(btnAuditMobile) btnAuditMobile.classList.remove('hidden');
+            if(btnRecalibDesktop) btnRecalibDesktop.classList.remove('hidden');
+            if(btnRecalibMobile) btnRecalibMobile.classList.remove('hidden');
+            if(btnTambahAset) btnTambahAset.classList.remove('hidden');
+
+            if (role === 'admin') {
+                // Admin akses penuh
+            } else if (role === 'auditor') {
+                // Auditor tidak boleh tambah dan kalibrasi semula
+                if(btnTambahAset) btnTambahAset.classList.add('hidden');
+                if(btnRecalibDesktop) btnRecalibDesktop.classList.add('hidden');
+                if(btnRecalibMobile) btnRecalibMobile.classList.add('hidden');
+            } else {
+                // Staf tidak boleh tambah, audit, dan kalibrasi
+                if(btnTambahAset) btnTambahAset.classList.add('hidden');
+                if(btnAuditDesktop) btnAuditDesktop.classList.add('hidden');
+                if(btnAuditMobile) btnAuditMobile.classList.add('hidden');
+                if(btnRecalibDesktop) btnRecalibDesktop.classList.add('hidden');
+                if(btnRecalibMobile) btnRecalibMobile.classList.add('hidden');
+            }
+
+            switchTab('dashboard'); // Kembali ke paparan utama
+        }
 
         function showToast(message, type = 'info') {
             const container = document.getElementById('toast-container');
@@ -896,12 +1054,12 @@
             document.getElementById('main-scroll-area').scrollTo(0,0);
 
             document.querySelectorAll('.nav-btn-desktop').forEach(el => {
-                el.classList.remove('bg-brand-600', 'text-white');
+                el.classList.remove('bg-brand-600', 'text-white', 'shadow-md');
                 el.classList.add('hover:bg-slate-800', 'text-slate-300');
             });
             const desktopBtn = document.getElementById(`nav-desktop-${tabId}`);
             if(desktopBtn) {
-                desktopBtn.classList.add('bg-brand-600', 'text-white');
+                desktopBtn.classList.add('bg-brand-600', 'text-white', 'shadow-md');
                 desktopBtn.classList.remove('hover:bg-slate-800', 'text-slate-300');
             }
 
@@ -974,10 +1132,10 @@
             const parts = dateStr.split(/[-/]/);
             if (parts.length >= 3) {
                 let year, month;
-                if (parts[0].length === 4) { // YYYY-MM-DD
+                if (parts[0].length === 4) { 
                     year = parseInt(parts[0], 10);
                     month = parseInt(parts[1], 10);
-                } else { // DD/MM/YYYY
+                } else { 
                     year = parseInt(parts[2], 10);
                     month = parseInt(parts[1], 10);
                 }
@@ -1087,7 +1245,6 @@
                     auditPending++;
                 }
 
-                // Kiraan Status Pinjaman (Lajur Q)
                 let statusPinjaman = item['Status Pinjaman'] || '';
                 if (statusPinjaman.trim().toLowerCase() === 'dipinjam') {
                     pinjamanDipinjam++;
@@ -1132,7 +1289,7 @@
                 const safeLocStr = loc.replace(/'/g, "\\'");
                 locationHtml += `
                     <div onclick="navigateAndFilterLocation('${safeLocStr}')" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3 cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all">
-                        <div class="p-2.5 bg-brand-50 rounded-lg text-brand-600 flex-shrink-0">
+                        <div class="p-2.5 bg-brand-50 rounded-lg text-brand-600 flex-shrink-0 border border-brand-100">
                             <i data-lucide="map-pin" class="w-5 h-5"></i>
                         </div>
                         <div class="min-w-0 flex-1">
@@ -1220,9 +1377,9 @@
             let actionHtml = '';
             paginatedItems.forEach(item => {
                 let badgeClass = '';
-                if(item._status === 'Telah Luput') badgeClass = 'bg-rose-100 text-rose-700';
-                else if(item._status === 'Lagi Seminggu') badgeClass = 'bg-orange-100 text-orange-700';
-                else badgeClass = 'bg-amber-100 text-amber-700';
+                if(item._status === 'Telah Luput') badgeClass = 'bg-rose-100 text-rose-700 border-rose-200';
+                else if(item._status === 'Lagi Seminggu') badgeClass = 'bg-orange-100 text-orange-700 border-orange-200';
+                else badgeClass = 'bg-amber-100 text-amber-700 border-amber-200';
 
                 actionHtml += `
                     <div class="flex items-start justify-between p-3 bg-slate-50 rounded-lg border border-slate-100 hover:border-slate-300 transition cursor-default">
@@ -1231,7 +1388,7 @@
                             <p class="text-xs text-slate-500 mt-1"><i data-lucide="hash" class="w-3 h-3 inline"></i> ${item['Serial No'] || 'Tiada SN'}</p>
                         </div>
                         <div class="text-right flex flex-col items-end">
-                            <span class="px-2 py-1 text-[10px] font-bold rounded-full shadow-sm ${badgeClass}">${item._status}</span>
+                            <span class="px-2 py-1 text-[10px] font-bold rounded-full border shadow-sm ${badgeClass}">${item._status}</span>
                             <span class="text-[10px] font-medium text-slate-500 mt-1.5">${item['Expired Date']}</span>
                         </div>
                     </div>
@@ -1278,19 +1435,19 @@
             let cardsHtml = '';
 
             dataArray.forEach((item, index) => {
-                let badge = `<span class="px-2.5 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-${item._statusColor}-100 text-${item._statusColor}-800 border border-${item._statusColor}-200">${item._status}</span>`;
+                let badge = `<span class="px-2.5 py-1 inline-flex text-[10px] leading-4 font-bold rounded shadow-sm bg-${item._statusColor}-100 text-${item._statusColor}-800 border border-${item._statusColor}-200">${item._status}</span>`;
 
                 tbodyHtml += `
-                    <tr onclick="openModal(${item._id})" class="hover:bg-slate-100 transition cursor-pointer">
+                    <tr onclick="openModal(${item._id})" class="hover:bg-slate-50 transition cursor-pointer group">
                         <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-500">${item['No.'] || item['No'] || index+1}</td>
                         <td class="px-4 py-4 whitespace-nowrap">
-                            <div class="font-bold text-slate-800">${item['Make'] || '-'} ${item['Model'] || ''}</div>
-                            <div class="text-xs text-slate-500">SN: ${item['Serial No'] || '-'}</div>
+                            <div class="font-bold text-slate-800 group-hover:text-brand-600 transition-colors">${item['Make'] || '-'} ${item['Model'] || ''}</div>
+                            <div class="text-xs text-slate-500 mt-0.5">SN: ${item['Serial No'] || '-'}</div>
                         </td>
                         <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-600">${item['Category'] || '-'}</td>
                         <td class="px-4 py-4 whitespace-nowrap">
-                            <div class="text-sm text-slate-800">${item['Current Location'] || '-'}</div>
-                            <div class="text-xs text-slate-500">Oleh: ${item['Current Holder'] || '-'}</div>
+                            <div class="text-sm text-slate-800 font-medium">${item['Current Location'] || '-'}</div>
+                            <div class="text-[10px] text-slate-500 mt-0.5">Oleh: ${item['Current Holder'] || '-'}</div>
                         </td>
                         <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-800 font-medium">${item['Expired Date'] || '-'}</td>
                         <td class="px-4 py-4 whitespace-nowrap">${badge}</td>
@@ -1300,7 +1457,7 @@
                 cardsHtml += `
                     <div onclick="openModal(${item._id})" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden active:scale-[0.98] transition cursor-pointer">
                         <div class="absolute left-0 top-0 w-1 h-full bg-${item._statusColor}-500"></div>
-                        <div class="flex justify-between items-start mb-2">
+                        <div class="flex justify-between items-start mb-2 pl-2">
                             <div>
                                 <span class="text-[10px] font-bold text-brand-600 uppercase tracking-wider">${item['Category'] || 'Umum'}</span>
                                 <h3 class="text-base font-bold text-slate-800 leading-tight">${item['Make'] || ''} ${item['Model'] || ''}</h3>
@@ -1308,17 +1465,17 @@
                             ${badge}
                         </div>
                         
-                        <div class="mt-3 grid grid-cols-2 gap-2 text-sm">
+                        <div class="mt-3 grid grid-cols-2 gap-2 text-sm pl-2">
                             <div>
-                                <p class="text-xs text-slate-500 mb-0.5">Siri (S/N)</p>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Siri (S/N)</p>
                                 <p class="font-medium text-slate-800">${item['Serial No'] || '-'}</p>
                             </div>
                             <div>
-                                <p class="text-xs text-slate-500 mb-0.5">Tarikh Luput</p>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5">Tarikh Luput</p>
                                 <p class="font-medium text-slate-800">${item['Expired Date'] || '-'}</p>
                             </div>
                             <div class="col-span-2 pt-2 border-t border-slate-100">
-                                <p class="text-xs text-slate-500 mb-0.5"><i data-lucide="map-pin" class="w-3 h-3 inline mr-1"></i>Lokasi Semasa</p>
+                                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5"><i data-lucide="map-pin" class="w-3 h-3 inline mr-1"></i>Lokasi Semasa</p>
                                 <p class="font-medium text-slate-700">${item['Current Location'] || '-'} <span class="text-slate-400 font-normal">(${item['Current Holder'] || '-'})</span></p>
                             </div>
                         </div>
@@ -1331,7 +1488,49 @@
             lucide.createIcons();
         }
 
-        // --- MOBILITI ASET LOGIC ---
+        function filterAssets() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            
+            const filteredData = globalData.filter(item => {
+                const searchString = `${item['Make']} ${item['Model']} ${item['Serial No']} ${item['Category']} ${item['Current Location']} ${item['Location Origin']}`.toLowerCase();
+                
+                const matchesSearch = searchString.includes(searchTerm);
+                
+                let matchesStatus = false;
+                if(currentFilter === 'Semua') {
+                    matchesStatus = true;
+                } else if (currentFilter === 'Hampir Luput') {
+                    matchesStatus = item._status === 'Lagi Sebulan' || item._status === 'Lagi Seminggu';
+                } else {
+                    matchesStatus = item._status === currentFilter;
+                }
+
+                let matchesLocation = false;
+                let itemLoc = item['Current Location'];
+                if (!itemLoc || itemLoc.trim() === '') itemLoc = 'Tidak Dinyatakan';
+
+                if(currentLocationFilter === 'Semua Lokasi') {
+                    matchesLocation = true;
+                } else {
+                    matchesLocation = itemLoc === currentLocationFilter;
+                }
+
+                let matchesPinjaman = false;
+                let statusPinjamanRaw = item['Status Pinjaman'] || '';
+                let statusPinj = statusPinjamanRaw.trim().toLowerCase() === 'dipinjam' ? 'Dipinjam' : 'Tersedia';
+
+                if(currentPinjamanFilter === 'Semua Pinjaman') {
+                    matchesPinjaman = true;
+                } else {
+                    matchesPinjaman = statusPinj === currentPinjamanFilter;
+                }
+                
+                return matchesSearch && matchesStatus && matchesLocation && matchesPinjaman;
+            });
+
+            renderAssets(filteredData);
+        }
+
         function toggleMobilitiCart(id) {
             const item = globalData.find(d => d._id === id);
             if(item) {
@@ -1391,28 +1590,28 @@
                 let statusPinj = statusPinjamanRaw.trim().toLowerCase() === 'dipinjam' ? 'Dipinjam' : 'Tersedia';
 
                 const isSelected = mobilitiCart.includes(item._id);
-                const borderClass = isSelected ? 'border-brand-500 bg-brand-50/30 shadow-md ring-1 ring-brand-500' : 'border-slate-200 hover:border-brand-300';
+                const borderClass = isSelected ? 'border-brand-500 bg-brand-50/50 shadow-md ring-1 ring-brand-500' : 'border-slate-200 hover:border-brand-300';
                 
                 let checkButtonHtml;
                 let cardClickEvent;
                 let opacityClass = 'bg-white';
                 
                 if (statusPinj === 'Dipinjam') {
-                    checkButtonHtml = `<button disabled class="p-1 rounded-full cursor-not-allowed flex-shrink-0" title="Aset sedang dipinjam"><i data-lucide="lock" class="w-5 h-5 text-slate-300"></i></button>`;
+                    checkButtonHtml = `<button disabled class="p-1 rounded-full cursor-not-allowed flex-shrink-0 bg-slate-100" title="Aset sedang dipinjam"><i data-lucide="lock" class="w-4 h-4 text-slate-400"></i></button>`;
                     cardClickEvent = '';
-                    opacityClass = 'bg-slate-50 opacity-70'; // Visual indicator for disabled state
+                    opacityClass = 'bg-slate-50 opacity-70 grayscale-[30%]';
                 } else {
-                    const checkIcon = isSelected ? `<i data-lucide="check-circle-2" class="w-6 h-6 text-brand-600 fill-brand-100"></i>` : `<i data-lucide="circle" class="w-6 h-6 text-slate-300"></i>`;
-                    checkButtonHtml = `<button onclick="toggleMobilitiCart(${item._id})" class="p-1 rounded-full hover:bg-slate-100 transition flex-shrink-0 active:scale-90">${checkIcon}</button>`;
+                    const checkIcon = isSelected ? `<i data-lucide="check-circle-2" class="w-6 h-6 text-brand-600 fill-brand-100"></i>` : `<i data-lucide="circle" class="w-6 h-6 text-slate-300 hover:text-brand-400"></i>`;
+                    checkButtonHtml = `<button onclick="toggleMobilitiCart(${item._id})" class="p-1 rounded-full transition flex-shrink-0 active:scale-90">${checkIcon}</button>`;
                     cardClickEvent = `onclick="toggleMobilitiCart(${item._id})"`;
                 }
 
                 let pinjamanBadge = statusPinj === 'Dipinjam' 
-                    ? `<span class="px-1.5 py-0.5 text-[9px] font-bold rounded bg-blue-100 text-blue-800 border border-blue-200 ml-2">DIPINJAM</span>`
-                    : `<span class="px-1.5 py-0.5 text-[9px] font-bold rounded bg-emerald-100 text-emerald-800 border border-emerald-200 ml-2">TERSEDIA</span>`;
+                    ? `<span class="px-1.5 py-0.5 text-[9px] font-bold rounded bg-blue-100 text-blue-800 border border-blue-200 ml-2 shadow-sm">DIPINJAM</span>`
+                    : `<span class="px-1.5 py-0.5 text-[9px] font-bold rounded bg-emerald-100 text-emerald-800 border border-emerald-200 ml-2 shadow-sm">TERSEDIA</span>`;
 
                 cardsHtml += `
-                    <div class="${opacityClass} p-4 rounded-xl shadow-sm border ${borderClass} relative overflow-hidden transition flex flex-col justify-between h-full group">
+                    <div class="${opacityClass} p-4 rounded-xl shadow-sm border ${borderClass} relative overflow-hidden transition-all duration-200 flex flex-col justify-between h-full group">
                         <div class="flex justify-between items-start mb-2">
                             <div class="flex-1 pr-2">
                                 <div class="flex items-center mb-1">
@@ -1426,17 +1625,17 @@
                         
                         <div class="mt-3 grid grid-cols-2 gap-2 text-sm ${statusPinj === 'Tersedia' ? 'cursor-pointer' : ''}" ${cardClickEvent}>
                             <div>
-                                <p class="text-[10px] text-slate-500 mb-0.5 font-bold uppercase">Siri (S/N)</p>
+                                <p class="text-[10px] text-slate-400 mb-0.5 font-bold uppercase tracking-wider">Siri (S/N)</p>
                                 <p class="font-semibold text-slate-700">${item['Serial No'] || '-'}</p>
                             </div>
                             <div>
-                                <p class="text-[10px] text-slate-500 mb-0.5 font-bold uppercase">Lokasi Semasa</p>
+                                <p class="text-[10px] text-slate-400 mb-0.5 font-bold uppercase tracking-wider">Lokasi Semasa</p>
                                 <p class="font-semibold text-slate-700 truncate" title="${item['Current Location']}">${item['Current Location'] || '-'}</p>
                             </div>
                         </div>
                         <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">
-                            <span class="text-[10px] font-bold uppercase px-2 py-1 border bg-${item._statusColor}-50 text-${item._statusColor}-600 border-${item._statusColor}-200 rounded-lg shadow-sm">${item._status}</span>
-                            <button onclick="openModal(${item._id})" class="text-xs text-brand-600 font-bold hover:underline flex items-center bg-brand-50 px-2 py-1 rounded-md">Lihat Info <i data-lucide="external-link" class="w-3 h-3 ml-1"></i></button>
+                            <span class="text-[9px] font-bold uppercase px-2 py-1 border bg-${item._statusColor}-50 text-${item._statusColor}-600 border-${item._statusColor}-200 rounded-md shadow-sm">${item._status}</span>
+                            <button onclick="openModal(${item._id})" class="text-xs text-brand-600 font-bold hover:underline flex items-center bg-brand-50 px-2.5 py-1.5 rounded-lg active:bg-brand-100 transition-colors">Info <i data-lucide="external-link" class="w-3 h-3 ml-1"></i></button>
                         </div>
                     </div>
                 `;
@@ -1453,6 +1652,10 @@
 
             const listContainer = document.getElementById('mobiliti-selected-list');
             document.getElementById('mobiliti-selected-count').innerText = mobilitiCart.length;
+
+            if (currentUser && currentUser.name) {
+                document.getElementById('mob-nama').value = currentUser.name;
+            }
 
             let listHtml = '';
             mobilitiCart.forEach(id => {
@@ -1509,7 +1712,6 @@
             lucide.createIcons();
 
             try {
-                // Himpunkan senarai aset yang dipilih
                 const selectedAssets = mobilitiCart.map(id => {
                     const item = globalData.find(d => d._id === id);
                     return {
@@ -1521,7 +1723,6 @@
                     };
                 });
 
-                // Bungkus data mobiliti beserta senarai aset
                 const payloadData = {
                     action: 'mobiliti',
                     nama: document.getElementById('mob-nama').value,
@@ -1548,7 +1749,6 @@
                     closeMobilitiCart();
                     e.target.reset();
                     
-                    // Segar semula data untuk memaparkan lokasi/pemegang baharu
                     setTimeout(() => { loadData(); }, 1500);
                 } else {
                     throw new Error(result.message);
@@ -1562,7 +1762,6 @@
                 formBtn.disabled = false;
             }
         }
-        // --- END MOBILITI LOGIC ---
 
         function setAuditView(viewType) {
             currentAuditTabView = viewType;
@@ -1582,7 +1781,6 @@
             }
             
             expandedAuditId = null; 
-            // Reset filter dropdown
             if(document.getElementById('auditStatusFilter')) document.getElementById('auditStatusFilter').value = 'Semua';
             
             renderAuditList();
@@ -1637,7 +1835,6 @@
 
             let targetList = currentAuditTabView === 'pending' ? pendingList : doneList;
             
-            // Logik Filter Dropdown: Semua / Baik / Rosak @ Hilang (Hanya untuk tab Selesai)
             if (currentAuditTabView === 'done') {
                 const statusFilterVal = document.getElementById('auditStatusFilter').value;
                 if (statusFilterVal !== 'Semua') {
@@ -1681,7 +1878,6 @@
                 if (currentAuditTabView === 'done') {
                     let statusColorStr = 'bg-slate-100 text-slate-600 border-slate-200';
                     let auditStat = item['Audit Status'] || item._simulatedAuditStatus || '-';
-                    let lastAuditVal = item['Last Audit Date'] || item['Last Audit'] || 'Bulan ini';
                     
                     if (auditStat === 'Baik') statusColorStr = 'bg-emerald-100 text-emerald-700 border-emerald-200';
                     else if (auditStat === 'Rosak') statusColorStr = 'bg-amber-100 text-amber-700 border-amber-200';
@@ -1689,7 +1885,7 @@
 
                     actionAreaHtml = `
                         <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center bg-slate-50 px-3 py-2 rounded-lg">
-                            <span class="text-xs font-semibold text-slate-500"><i data-lucide="calendar-check" class="w-3.5 h-3.5 inline mr-1"></i> Disahkan Pada: <span class="text-slate-800">${item['Last Audit'] || 'Bulan ini'}</span></span>
+                            <span class="text-xs font-semibold text-slate-500"><i data-lucide="calendar-check" class="w-3.5 h-3.5 inline mr-1"></i> Disahkan: <span class="text-slate-800">${item['Last Audit'] || 'Bulan ini'}</span></span>
                             <span class="px-2 py-1 text-[10px] font-bold rounded-full border shadow-sm ${statusColorStr}">${auditStat}</span>
                         </div>
                     `;
@@ -1707,27 +1903,27 @@
                 } else {
                     actionAreaHtml = `
                         <div class="mt-4 pt-3 border-t border-slate-100 text-center">
-                            <span class="text-xs font-semibold text-brand-500 flex items-center justify-center gap-1"><i data-lucide="mouse-pointer-click" class="w-3.5 h-3.5"></i> Klik untuk mula audit</span>
+                            <span class="text-[11px] font-bold text-brand-600 flex items-center justify-center gap-1.5 bg-brand-50 py-1.5 rounded-md hover:bg-brand-100 transition-colors"><i data-lucide="mouse-pointer-click" class="w-3.5 h-3.5"></i> Klik untuk mula audit</span>
                         </div>
                     `;
                 }
 
                 listHtml += `
-                    <div onclick="openModal(${item._id})" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:shadow-md transition-all relative overflow-hidden cursor-pointer group">
-                        <div class="absolute left-0 top-0 w-1 h-full bg-slate-200 group-hover:bg-brand-400 transition-colors"></div>
+                    <div onclick="openModal(${item._id})" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 hover:shadow-md hover:border-brand-300 transition-all relative overflow-hidden cursor-pointer group">
+                        <div class="absolute left-0 top-0 w-1 h-full bg-slate-200 group-hover:bg-brand-500 transition-colors"></div>
                         <div class="absolute right-3 top-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <i data-lucide="external-link" class="w-4 h-4 text-slate-300"></i>
+                            <i data-lucide="external-link" class="w-4 h-4 text-brand-400"></i>
                         </div>
                         
-                        <p class="text-[10px] font-bold text-brand-600 uppercase tracking-wider mb-1">${item['Category'] || 'Kategori Umum'}</p>
-                        <h3 class="text-base font-bold text-slate-800 leading-tight pr-5">${item['Make'] || ''} ${item['Model'] || ''}</h3>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">${item['Category'] || 'Kategori Umum'}</p>
+                        <h3 class="text-base font-bold text-slate-800 leading-tight pr-5 group-hover:text-brand-600 transition-colors">${item['Make'] || ''} ${item['Model'] || ''}</h3>
                         
                         <div class="mt-2 grid grid-cols-2 gap-x-2 gap-y-1 text-xs">
                             <div class="flex items-center text-slate-600">
-                                <span class="font-bold mr-1">S/N:</span> <span class="truncate">${item['Serial No'] || '-'}</span>
+                                <span class="font-bold mr-1 text-[10px] uppercase text-slate-400">S/N:</span> <span class="truncate font-semibold">${item['Serial No'] || '-'}</span>
                             </div>
                             <div class="flex items-center text-slate-600 justify-end">
-                                <i data-lucide="map-pin" class="w-3 h-3 mr-1 flex-shrink-0"></i> <span class="truncate font-medium">${item['Current Location'] || '-'}</span>
+                                <i data-lucide="map-pin" class="w-3 h-3 mr-1 flex-shrink-0 text-slate-400"></i> <span class="truncate font-medium">${item['Current Location'] || '-'}</span>
                             </div>
                         </div>
 
@@ -1757,8 +1953,8 @@
                         <input type="file" id="modal-audit-img" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 cursor-pointer outline-none bg-white border border-slate-200 rounded-lg">
                     </div>
                     <div class="flex justify-end gap-2 pt-2 border-t border-slate-100">
-                        <button onclick="cancelAuditAction(${id})" class="px-4 py-2 text-xs font-semibold bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition shadow-sm">Batal</button>
-                        <button onclick="confirmAuditAction(${id}, '${status}')" class="px-4 py-2 text-xs font-semibold bg-brand-600 text-white rounded-lg hover:bg-brand-500 transition shadow-sm flex items-center"><i data-lucide="send" class="w-3.5 h-3.5 mr-1.5"></i> Sahkan & Hantar</button>
+                        <button onclick="cancelAuditAction(${id})" class="px-4 py-2 text-xs font-semibold bg-white border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 transition shadow-sm active:scale-95">Batal</button>
+                        <button onclick="confirmAuditAction(${id}, '${status}')" class="px-4 py-2 text-xs font-semibold bg-brand-600 text-white rounded-lg hover:bg-brand-500 transition shadow-sm flex items-center active:scale-95"><i data-lucide="send" class="w-3.5 h-3.5 mr-1.5"></i> Sahkan & Hantar</button>
                     </div>
                 </div>
             `;
@@ -1863,7 +2059,7 @@
                     
                     closeModal();
                     renderAuditList();
-                    updateDashboard(); // Also refresh charts to reflect latest audit status
+                    updateDashboard(); 
                 } else {
                     throw new Error(result.message);
                 }
@@ -1906,20 +2102,20 @@
                 let badgeClass = item._status === 'Telah Luput' ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-amber-100 text-amber-700 border-amber-200';
                 
                 cardsHtml += `
-                    <div onclick="selectRecalibAsset(${item._id})" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden hover:border-brand-300 hover:shadow-md transition cursor-pointer group">
+                    <div onclick="selectRecalibAsset(${item._id})" class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 relative overflow-hidden hover:border-brand-400 hover:shadow-md transition-all cursor-pointer group">
                         <div class="absolute right-3 top-3 opacity-0 group-hover:opacity-100 transition-opacity">
                             <i data-lucide="arrow-right-circle" class="w-5 h-5 text-brand-500"></i>
                         </div>
-                        <span class="px-2 py-0.5 inline-flex text-[10px] font-bold rounded shadow-sm border mb-2 ${badgeClass}">${item._status}</span>
-                        <h3 class="text-sm font-bold text-slate-800 leading-tight">${item['Make'] || ''} ${item['Model'] || ''}</h3>
-                        <p class="text-[10px] font-bold text-brand-600 uppercase mt-0.5">${item['Category'] || 'Kategori Umum'}</p>
+                        <span class="px-2.5 py-1 inline-flex text-[10px] font-bold rounded shadow-sm border mb-2 ${badgeClass}">${item._status}</span>
+                        <h3 class="text-sm font-bold text-slate-800 leading-tight group-hover:text-brand-600 transition-colors">${item['Make'] || ''} ${item['Model'] || ''}</h3>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">${item['Category'] || 'Kategori Umum'}</p>
                         
-                        <div class="mt-3 bg-slate-50 p-2 rounded flex justify-between items-center text-xs border border-slate-100">
+                        <div class="mt-3 bg-slate-50 p-2.5 rounded-lg flex justify-between items-center text-xs border border-slate-100">
                             <div>
-                                <span class="text-slate-400">S/N:</span> <span class="font-bold text-slate-700">${item['Serial No'] || '-'}</span>
+                                <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">S/N:</span> <span class="font-bold text-slate-700">${item['Serial No'] || '-'}</span>
                             </div>
                             <div class="text-right">
-                                <span class="text-slate-400">Luput:</span> <span class="font-bold text-slate-700">${item['Expired Date'] || '-'}</span>
+                                <span class="text-[10px] uppercase font-bold text-slate-400 tracking-wider">Luput:</span> <span class="font-bold text-slate-700">${item['Expired Date'] || '-'}</span>
                             </div>
                         </div>
                     </div>
@@ -2031,49 +2227,6 @@
             }
         }
 
-        function filterAssets() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            
-            const filteredData = globalData.filter(item => {
-                const searchString = `${item['Make']} ${item['Model']} ${item['Serial No']} ${item['Category']} ${item['Current Location']} ${item['Location Origin']}`.toLowerCase();
-                
-                const matchesSearch = searchString.includes(searchTerm);
-                
-                let matchesStatus = false;
-                if(currentFilter === 'Semua') {
-                    matchesStatus = true;
-                } else if (currentFilter === 'Hampir Luput') {
-                    matchesStatus = item._status === 'Lagi Sebulan' || item._status === 'Lagi Seminggu';
-                } else {
-                    matchesStatus = item._status === currentFilter;
-                }
-
-                let matchesLocation = false;
-                let itemLoc = item['Current Location'];
-                if (!itemLoc || itemLoc.trim() === '') itemLoc = 'Tidak Dinyatakan';
-
-                if(currentLocationFilter === 'Semua Lokasi') {
-                    matchesLocation = true;
-                } else {
-                    matchesLocation = itemLoc === currentLocationFilter;
-                }
-
-                let matchesPinjaman = false;
-                let statusPinjamanRaw = item['Status Pinjaman'] || '';
-                let statusPinj = statusPinjamanRaw.trim().toLowerCase() === 'dipinjam' ? 'Dipinjam' : 'Tersedia';
-
-                if(currentPinjamanFilter === 'Semua Pinjaman') {
-                    matchesPinjaman = true;
-                } else {
-                    matchesPinjaman = statusPinj === currentPinjamanFilter;
-                }
-                
-                return matchesSearch && matchesStatus && matchesLocation && matchesPinjaman;
-            });
-
-            renderAssets(filteredData);
-        }
-
         function getDriveId(url) {
             if (!url) return null;
             const match = url.match(/\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
@@ -2108,13 +2261,13 @@
             let statusPinjamanRaw = item['Status Pinjaman'] || '';
             let statusPinj = statusPinjamanRaw.trim().toLowerCase() === 'dipinjam' ? 'Dipinjam' : 'Tersedia';
             let pinjamanBadge = statusPinj === 'Dipinjam' 
-                ? `<span class="px-2 py-1 text-[10px] font-bold rounded-full bg-blue-100 text-blue-800 border border-blue-200">Dipinjam</span>`
-                : `<span class="px-2 py-1 text-[10px] font-bold rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">Tersedia</span>`;
+                ? `<span class="px-2 py-1 text-[10px] font-bold rounded shadow-sm bg-blue-100 text-blue-800 border border-blue-200">Dipinjam</span>`
+                : `<span class="px-2 py-1 text-[10px] font-bold rounded shadow-sm bg-emerald-100 text-emerald-800 border border-emerald-200">Tersedia</span>`;
 
             const fields = [
                 { label: 'Siri (S/N)', value: item['Serial No'] },
                 { label: 'Kategori', value: item['Category'] },
-                { label: 'Status Penentukuran', value: `<span class="px-2 py-1 text-[10px] font-bold rounded-full bg-${item._statusColor}-100 text-${item._statusColor}-800 border border-${item._statusColor}-200">${item._status}</span>`, isHtml: true },
+                { label: 'Status Penentukuran', value: `<span class="px-2 py-1 text-[10px] font-bold rounded shadow-sm bg-${item._statusColor}-100 text-${item._statusColor}-800 border border-${item._statusColor}-200">${item._status}</span>`, isHtml: true },
                 { label: 'Status Pinjaman', value: pinjamanBadge, isHtml: true },
                 { label: 'Tarikh Luput', value: item['Expired Date'] },
                 { label: 'Dikalibrasi Oleh', value: item['Calibration By'] },
@@ -2159,7 +2312,10 @@
             }
 
             const isAuditView = !document.getElementById('view-audit').classList.contains('hidden');
-            if(!isAuditView) {
+            
+            const canEdit = currentUser && currentUser.designation.toLowerCase() === 'admin';
+
+            if(!isAuditView && canEdit) {
                 buttonsHtml += `
                     <button onclick="openEditModal(${item._id})" class="flex items-center space-x-2 px-4 py-2 bg-amber-500 text-white hover:bg-amber-400 active:scale-95 font-semibold rounded-lg transition-all shadow-md text-sm">
                         <i data-lucide="edit-3" class="w-4 h-4"></i>
@@ -2175,8 +2331,10 @@
             
             let lastAuditVal = item['Last Audit Date'] || item['Last Audit'];
             let isAudited = item._auditSessionDone || isAuditedThisMonth(lastAuditVal);
+            
+            const canAudit = currentUser && ['admin', 'auditor'].includes(currentUser.designation.toLowerCase());
 
-            if (isAuditView && currentAuditTabView === 'pending' && !isAudited) {
+            if (isAuditView && currentAuditTabView === 'pending' && !isAudited && canAudit) {
                 auditContainer.classList.remove('hidden');
                 auditContainer.innerHTML = `
                     <div class="p-4 md:p-6 bg-slate-100 flex flex-col gap-3">
@@ -2184,15 +2342,15 @@
                             <i data-lucide="clipboard-signature" class="w-4 h-4 text-brand-500"></i> Tindakan Pengesahan Audit
                         </h4>
                         <div class="grid grid-cols-3 gap-3" id="audit-btn-group-${item._id}">
-                            <button onclick="submitAuditToServer(${item._id}, 'Baik')" class="flex flex-col items-center justify-center py-3 bg-emerald-50 text-emerald-600 rounded-xl border-2 border-emerald-100 hover:bg-emerald-500 hover:text-white hover:border-emerald-500 hover:shadow-md transition-all group">
+                            <button onclick="submitAuditToServer(${item._id}, 'Baik')" class="flex flex-col items-center justify-center py-3 bg-emerald-50 text-emerald-600 rounded-xl border border-emerald-200 shadow-sm hover:bg-emerald-500 hover:text-white hover:border-emerald-500 hover:shadow-md transition-all group active:scale-95">
                                 <i data-lucide="check-circle-2" class="w-6 h-6 mb-1.5 group-hover:scale-110 transition-transform"></i>
                                 <span class="text-[11px] font-bold uppercase tracking-wider">Aset Baik</span>
                             </button>
-                            <button onclick="showAuditRemarkForm(${item._id}, 'Rosak')" class="flex flex-col items-center justify-center py-3 bg-amber-50 text-amber-600 rounded-xl border-2 border-amber-100 hover:bg-amber-500 hover:text-white hover:border-amber-500 hover:shadow-md transition-all group">
+                            <button onclick="showAuditRemarkForm(${item._id}, 'Rosak')" class="flex flex-col items-center justify-center py-3 bg-amber-50 text-amber-600 rounded-xl border border-amber-200 shadow-sm hover:bg-amber-500 hover:text-white hover:border-amber-500 hover:shadow-md transition-all group active:scale-95">
                                 <i data-lucide="alert-triangle" class="w-6 h-6 mb-1.5 group-hover:scale-110 transition-transform"></i>
                                 <span class="text-[11px] font-bold uppercase tracking-wider">Rosak</span>
                             </button>
-                            <button onclick="showAuditRemarkForm(${item._id}, 'Hilang')" class="flex flex-col items-center justify-center py-3 bg-rose-50 text-rose-600 rounded-xl border-2 border-rose-100 hover:bg-rose-500 hover:text-white hover:border-rose-500 hover:shadow-md transition-all group">
+                            <button onclick="showAuditRemarkForm(${item._id}, 'Hilang')" class="flex flex-col items-center justify-center py-3 bg-rose-50 text-rose-600 rounded-xl border border-rose-200 shadow-sm hover:bg-rose-500 hover:text-white hover:border-rose-500 hover:shadow-md transition-all group active:scale-95">
                                 <i data-lucide="x-circle" class="w-6 h-6 mb-1.5 group-hover:scale-110 transition-transform"></i>
                                 <span class="text-[11px] font-bold uppercase tracking-wider">Hilang</span>
                             </button>
