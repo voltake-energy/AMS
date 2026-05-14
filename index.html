@@ -3,18 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Voltake AMS</title>
+    <title>Sistem Pengurusan Aset</title>
     <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     
-    <!-- PWA Icons & Manifest -->
     <link rel="icon" type="image/png" href="https://i.postimg.cc/15FVH6SY/Untitled-design-(1).png">
     <link rel="apple-touch-icon" href="https://i.postimg.cc/15FVH6SY/Untitled-design-(1).png">
     <script>
         const manifest = {
             "name": "Voltake Asset Management System",
-            "short_name": "EngAsset",
+            "short_name": "VoltAMS",
             "start_url": ".",
             "display": "standalone",
             "background_color": "#0f172a",
@@ -94,15 +93,14 @@
 </head>
 <body class="text-slate-800 antialiased h-screen flex flex-col md:flex-row overflow-hidden selection:bg-brand-500 selection:text-white">
 
-    <!-- Login Screen -->
     <div id="login-screen" class="fixed inset-0 z-[200] bg-slate-900 flex items-center justify-center p-4 transition-opacity duration-300">
         <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden flex flex-col transform scale-100 transition-transform duration-300" id="login-card">
             <div class="p-8 text-center bg-slate-50 border-b border-slate-100">
                 <div class="w-20 h-20 bg-white rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-sm border border-slate-100 p-2">
-                    <img src="https://i.postimg.cc/15FVH6SY/Untitled-design-(1).png" alt="EngAsset Logo" class="w-full h-full object-contain">
+                    <img src="https://i.postimg.cc/15FVH6SY/Untitled-design-(1).png" alt="Voltake Logo" class="w-full h-full object-contain">
                 </div>
                 <h2 class="text-2xl font-bold text-slate-800">Log Masuk AMS</h2>
-                <p class="text-sm text-slate-500 mt-1">Voltake Asset Management System</p>
+                <p class="text-sm text-slate-500 mt-1">Sistem Pengurusan Aset</p>
             </div>
             <div class="p-8">
                 <form id="loginForm" onsubmit="handleLogin(event)" class="space-y-5">
@@ -128,11 +126,10 @@
         </div>
     </div>
 
-    <!-- Sidebar (Desktop) / Hidden on Mobile -->
     <aside class="hidden md:flex flex-col w-64 bg-slate-900 text-slate-300 h-full border-r border-slate-800 shadow-xl z-20">
         <div class="p-6 flex items-center space-x-3 text-white border-b border-slate-800">
             <img src="https://i.postimg.cc/15FVH6SY/Untitled-design-(1).png" alt="Logo" class="w-10 h-10 object-contain drop-shadow-md">
-            <h1 class="text-xl font-bold tracking-tight leading-tight">EngAsset<br><span class="text-sm text-slate-400 font-normal">Management</span></h1>
+            <h1 class="text-xl font-bold tracking-tight leading-tight">VoltAMS<br><span class="text-sm text-slate-400 font-normal">Asset Management</span></h1>
         </div>
         <nav class="flex-1 px-4 py-6 space-y-2">
             <button onclick="switchTab('dashboard')" id="nav-desktop-dashboard" class="nav-btn-desktop w-full flex items-center space-x-3 px-4 py-3 rounded-lg bg-brand-600 text-white shadow-md transition-colors">
@@ -157,14 +154,16 @@
                 <span id="recalib-badge-desktop" class="absolute right-4 w-2 h-2 rounded-full bg-rose-500 hidden animate-pulse"></span>
             </button>
         </nav>
-        <div id="desktop-user-profile" class="p-4 border-t border-slate-800 flex items-center gap-3 hidden">
-            <img id="desktop-user-pic" src="" class="w-10 h-10 rounded-full object-cover border border-slate-600">
-            <div class="flex-1 min-w-0">
-                <p id="desktop-user-name" class="text-sm font-bold text-white truncate"></p>
+        <div id="desktop-user-profile" class="p-4 border-t border-slate-800 flex items-center gap-2 hidden">
+            <img id="desktop-user-pic" src="" onclick="openProfileModal()" class="w-10 h-10 rounded-full object-cover border border-slate-600 cursor-pointer hover:border-brand-400 transition-colors" title="Tetapan Profil">
+            <div class="flex-1 min-w-0 cursor-pointer" onclick="openProfileModal()" title="Tetapan Profil">
+                <p id="desktop-user-name" class="text-sm font-bold text-white truncate hover:text-brand-300 transition-colors"></p>
                 <p id="desktop-user-role" class="text-[10px] text-brand-400 font-bold uppercase tracking-wider truncate"></p>
             </div>
+            <button onclick="openProfileModal()" class="p-1.5 text-slate-400 hover:text-brand-400 hover:bg-slate-800 rounded-lg transition" title="Tetapan Profil"><i data-lucide="settings" class="w-4 h-4"></i></button>
             <button onclick="logout()" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition" title="Log Keluar"><i data-lucide="log-out" class="w-4 h-4"></i></button>
         </div>
+
         <div class="p-4 border-t border-slate-800 text-xs text-center text-slate-500">
             V1.0.0 &copy; 2026 PWA Eng.
         </div>
@@ -178,11 +177,14 @@
                 <img src="https://i.postimg.cc/15FVH6SY/Untitled-design-(1).png" alt="Logo" class="w-8 h-8 object-contain drop-shadow-md">
                 <h1 class="text-lg font-bold">EngAsset</h1>
             </div>
-            <div class="flex items-center gap-3">
-                <button onclick="logout()" class="hidden p-1.5 rounded-full bg-slate-800 text-rose-400 hover:bg-slate-700 transition" id="mobile-logout-btn">
+            <div class="flex items-center gap-2">
+                <button onclick="openProfileModal()" class="hidden p-1.5 rounded-full bg-slate-800 text-slate-300 hover:text-brand-400 hover:bg-slate-700 transition" id="mobile-settings-btn" title="Tetapan Profil">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                </button>
+                <button onclick="logout()" class="hidden p-1.5 rounded-full bg-slate-800 text-rose-400 hover:bg-slate-700 transition" id="mobile-logout-btn" title="Log Keluar">
                     <i data-lucide="log-out" class="w-4 h-4"></i>
                 </button>
-                <img id="mobile-user-pic" src="" class="w-8 h-8 rounded-full object-cover border border-slate-600 hidden">
+                <img id="mobile-user-pic" onclick="openProfileModal()" src="" class="w-8 h-8 rounded-full object-cover border border-slate-600 hidden cursor-pointer hover:border-brand-400 transition-colors" title="Tetapan Profil">
                 <button onclick="loadData()" class="p-2 rounded-full bg-slate-800 text-brand-400 hover:bg-slate-700 active:scale-95 transition">
                     <i data-lucide="refresh-cw" class="w-5 h-5"></i>
                 </button>
@@ -195,20 +197,24 @@
             <p class="text-slate-600 font-medium animate-pulse">Menarik data dari satelit (Google Sheets)...</p>
         </div>
 
+        <!-- Scrollable Views Container -->
         <div class="flex-1 overflow-y-auto no-scrollbar p-4 md:p-8 pb-32 md:pb-8 bg-slate-50 relative" id="main-scroll-area">
             
+            <!-- VIEW: DASHBOARD -->
             <div id="view-dashboard" class="view-section space-y-6">
+                
                 <div class="flex justify-between items-end">
                     <div>
                         <h2 class="text-2xl font-bold text-slate-800">Papan Pemuka</h2>
                         <p class="text-sm text-slate-500">Analisis Penentukuran & Audit Aset</p>
                     </div>
-                    <button onclick="loadData()" class="hidden md:flex items-center space-x-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg shadow-sm hover:bg-slate-50 active:scale-95 transition">
+                    <button onclick="loadData()" class="hidden md:flex items-center space-x-2 px-4 py-2 bg-white border border-slate-200 text-slate-600 rounded-lg shadow-sm hover:bg-slate-50 transition">
                         <i data-lucide="refresh-cw" class="w-4 h-4"></i>
                         <span class="text-sm font-medium">Segar Semula</span>
                     </button>
                 </div>
 
+                <!-- KPI Cards -->
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                     <div onclick="navigateAndFilter('Semua')" class="cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col">
                         <span class="text-slate-500 text-xs font-semibold uppercase tracking-wider">Jumlah Aset</span>
@@ -231,8 +237,12 @@
                     </div>
                 </div>
 
+                <!-- Charts Area: Responsive Grid -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Left Column: Stacked Charts (Penentukuran & Audit) -->
                     <div class="col-span-1 flex flex-col gap-6">
+                        <!-- Chart 1: Penentukuran -->
                         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
                             <h3 class="text-sm font-bold text-slate-700 mb-3 border-b pb-2">Status Penentukuran</h3>
                             <div class="relative h-48 w-full flex justify-center">
@@ -240,6 +250,7 @@
                             </div>
                         </div>
                         
+                        <!-- Chart 2: Status Pinjaman -->
                         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
                             <h3 class="text-sm font-bold text-slate-700 mb-3 border-b pb-2">Status Pinjaman Aset</h3>
                             <div class="relative h-48 w-full flex justify-center">
@@ -247,8 +258,10 @@
                             </div>
                         </div>
 
+                        <!-- Ringkasan KAD Audit Bulanan -->
                         <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col">
                             <h3 class="text-sm font-bold text-slate-700 mb-3 border-b pb-2">Ringkasan Audit (Bulan Semasa)</h3>
+                            
                             <div class="grid grid-cols-2 gap-3 mb-3">
                                 <div class="bg-brand-50 p-3 rounded-lg border border-brand-100 flex flex-col items-center justify-center">
                                     <span class="text-2xl font-bold text-brand-600" id="kpi-audit-done">0</span>
@@ -259,6 +272,7 @@
                                     <span class="text-[10px] uppercase font-bold text-slate-600 mt-1">Belum Audit</span>
                                 </div>
                             </div>
+                            
                             <div class="grid grid-cols-3 gap-2">
                                 <div class="bg-emerald-50 py-2 rounded-lg border border-emerald-100 text-center flex flex-col justify-center">
                                     <span class="text-lg font-bold text-emerald-600 leading-tight" id="kpi-audit-baik">0</span>
@@ -276,12 +290,13 @@
                         </div>
                     </div>
 
+                    <!-- Right Column: Tindakan Segera -->
                     <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm col-span-1 lg:col-span-2 flex flex-col h-full min-h-[400px]">
                         <h3 class="text-base font-bold text-slate-700 mb-4 border-b pb-2 flex justify-between items-center">
                             Tindakan Segera
                             <span class="text-xs bg-rose-50 text-rose-600 font-semibold px-2.5 py-1 rounded-full"><span id="action-total-count">0</span> Aset Terlibat</span>
                         </h3>
-                        <div id="action-list" class="flex-1 overflow-y-auto pr-2 space-y-3 no-scrollbar">
+                        <div id="action-list" class="flex-1 overflow-y-auto pr-2 space-y-3">
                             <!-- Injected via JS -->
                         </div>
                         <div id="action-pagination" class="hidden mt-4 pt-3 border-t flex justify-between items-center text-sm">
@@ -292,6 +307,7 @@
                     </div>
                 </div>
 
+                <!-- Asset by Location Origin -->
                 <div class="pt-2">
                     <h3 class="text-base font-bold text-slate-700 mb-4 border-b pb-2">Aset Mengikut Lokasi Semasa</h3>
                     <div id="location-cards" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
@@ -300,6 +316,7 @@
                 </div>
             </div>
 
+            <!-- VIEW: ASSETS LIST -->
             <div id="view-assets" class="view-section hidden space-y-4">
                 <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
                     <div class="flex justify-between items-center w-full md:w-auto">
@@ -334,6 +351,7 @@
                             </div>
                         </div>
 
+                        <!-- Dropdown Lokasi -->
                         <div class="relative w-full xl:w-48 flex-shrink-0">
                             <select id="locationFilter" onchange="handleLocationDropdownChange()" class="w-full appearance-none pl-4 pr-10 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition font-semibold text-slate-700 shadow-sm cursor-pointer truncate">
                                 <option value="Semua Lokasi">Semua Lokasi</option>
@@ -343,6 +361,7 @@
                             </div>
                         </div>
 
+                        <!-- Dropdown Status Pinjaman -->
                         <div class="relative w-full xl:w-48 flex-shrink-0">
                             <select id="pinjamanFilter" onchange="handlePinjamanDropdownChange()" class="w-full appearance-none pl-4 pr-10 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition font-semibold text-slate-700 shadow-sm cursor-pointer truncate">
                                 <option value="Semua Pinjaman">Semua Pinjaman</option>
@@ -356,6 +375,7 @@
                     </div>
                 </div>
 
+                <!-- Desktop Table View -->
                 <div class="hidden md:block bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
                     <div class="overflow-x-auto">
                         <table class="min-w-full divide-y divide-slate-200 text-sm">
@@ -376,35 +396,83 @@
                     </div>
                 </div>
 
+                <!-- Mobile Card View -->
                 <div id="asset-cards" class="md:hidden grid grid-cols-1 gap-4 pb-4">
                     <!-- Injected via JS -->
                 </div>
             </div>
 
+            <!-- VIEW: MOBILITI ASET -->
             <div id="view-mobiliti" class="view-section hidden space-y-4">
-                <div class="flex justify-between items-end">
+                
+                <div class="flex justify-between items-end mb-2">
                     <div>
                         <h2 class="text-2xl font-bold text-slate-800">Mobiliti Aset</h2>
-                        <p class="text-sm text-slate-500">Pilih aset untuk dibawa ke tapak (site)</p>
+                        <p class="text-sm text-slate-500">Pilih aset untuk pinjaman atau semak status pemulangan</p>
                     </div>
-                    <button onclick="openMobilitiCart()" class="relative flex items-center space-x-2 px-3 md:px-4 py-2 bg-brand-600 text-white rounded-lg shadow-sm hover:bg-brand-500 active:scale-95 transition-colors">
-                        <i data-lucide="shopping-cart" class="w-4 h-4"></i>
-                        <span class="text-sm font-semibold hidden md:inline">Troli Aset</span>
-                        <span id="mobiliti-cart-count" class="absolute -top-2 -right-2 w-5 h-5 bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white hidden shadow-sm">0</span>
-                    </button>
                 </div>
 
-                <div class="relative w-full md:max-w-md">
-                    <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
-                    <input type="text" id="mobilitiSearchInput" onkeyup="renderMobilitiAssets()" placeholder="Cari Aset, S/N, Model..." class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition shadow-sm">
+                <!-- Main Tabs for Mobiliti -->
+                <div class="flex space-x-2 bg-slate-200/60 p-1 rounded-xl w-full md:w-fit mb-4">
+                    <button id="tab-mob-new" onclick="switchMobilitiTab('new')" class="flex-1 sm:flex-none px-5 py-2 text-sm font-bold rounded-lg bg-white text-slate-800 shadow-sm transition">Pinjam Aset (Troli)</button>
+                    <button id="tab-mob-history" onclick="switchMobilitiTab('history')" class="flex-1 sm:flex-none px-5 py-2 text-sm font-bold rounded-lg text-slate-500 hover:text-slate-800 hover:bg-white/50 transition">Sejarah & Pemulangan</button>
+                    <button id="tab-mob-approval" onclick="switchMobilitiTab('approval')" class="hidden flex-1 sm:flex-none px-5 py-2 text-sm font-bold rounded-lg text-slate-500 hover:text-slate-800 hover:bg-white/50 transition">Pengesahan Admin</button>
                 </div>
 
-                <div id="mobiliti-asset-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
-                    <!-- Injected via JS -->
+                <!-- SECTION: PINJAM ASET (NEW LOAN) -->
+                <div id="mobiliti-new-section" class="space-y-4 animate-fade-in">
+                    <div class="flex justify-between items-center">
+                        <div class="relative w-full md:max-w-md">
+                            <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
+                            <input type="text" id="mobilitiSearchInput" onkeyup="renderMobilitiAssets()" placeholder="Cari Aset, S/N, Model..." class="w-full pl-9 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition shadow-sm">
+                        </div>
+                        <button onclick="openMobilitiCart()" class="relative flex items-center space-x-2 px-3 md:px-4 py-2.5 bg-brand-600 text-white rounded-xl shadow-md hover:bg-brand-500 transition-colors ml-4 flex-shrink-0">
+                            <i data-lucide="shopping-cart" class="w-5 h-5"></i>
+                            <span class="text-sm font-semibold hidden md:inline">Troli Pinjaman</span>
+                            <span id="mobiliti-cart-count" class="absolute -top-2 -right-2 w-5 h-5 bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white hidden shadow-sm">0</span>
+                        </button>
+                    </div>
+
+                    <div id="mobiliti-asset-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
+                        <!-- Injected via JS -->
+                    </div>
                 </div>
+
+                <!-- SECTION: SEJARAH & PEMULANGAN (HISTORY) -->
+                <div id="mobiliti-history-section" class="hidden space-y-4 animate-fade-in">
+                    <!-- Sub Tabs for History -->
+                    <div class="flex space-x-6 border-b border-slate-200 mb-4 px-1">
+                        <button id="subtab-active" onclick="switchHistorySubTab('active')" class="pb-2 text-sm font-bold border-b-2 border-brand-600 text-brand-600 transition">Pinjaman Aktif</button>
+                        <button id="subtab-past" onclick="switchHistorySubTab('past')" class="pb-2 text-sm font-bold border-b-2 border-transparent text-slate-500 hover:text-slate-800 transition">Sejarah Lepas</button>
+                    </div>
+                    
+                    <!-- Container: Pinjaman Aktif -->
+                    <div id="history-active-list" class="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-4">
+                        <!-- Injected via JS -->
+                    </div>
+
+                    <!-- Container: Sejarah Lepas (Mock) -->
+                    <div id="history-past-list" class="hidden grid grid-cols-1 gap-3 pb-4">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
+                <!-- SECTION: PENGESAHAN ADMIN (APPROVAL) -->
+                <div id="mobiliti-approval-section" class="hidden space-y-4 animate-fade-in">
+                    <div class="bg-blue-50 border border-blue-100 text-blue-700 px-4 py-3 rounded-xl flex gap-3 text-sm shadow-sm mb-2">
+                        <i data-lucide="info" class="w-5 h-5 flex-shrink-0 text-blue-500"></i>
+                        <p>Ruangan ini khusus untuk Admin mengesahkan kondisi fizikal aset yang telah dipulangkan oleh staf sebelum ia kembali berstatus <strong class="font-bold">Tersedia</strong> dalam inventori.</p>
+                    </div>
+                    <div id="approval-pending-list" class="grid grid-cols-1 lg:grid-cols-2 gap-4 pb-4">
+                        <!-- Injected via JS -->
+                    </div>
+                </div>
+
             </div>
 
+            <!-- VIEW: AUDIT BULANAN -->
             <div id="view-audit" class="view-section hidden space-y-6">
+                <!-- Header & Progress -->
                 <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm relative overflow-hidden">
                     <div class="absolute right-0 top-0 w-3 h-full bg-brand-500"></div>
                     <div class="flex justify-between items-end mb-4">
@@ -413,6 +481,7 @@
                             <p class="text-sm text-slate-500 font-medium mt-1" id="audit-month-label">Bulan Semasa</p>
                         </div>
                     </div>
+                    <!-- Progress Bar -->
                     <div class="space-y-2 mt-6">
                         <div class="flex justify-between text-sm font-bold text-slate-700">
                             <span>Prestasi Audit Semasa</span>
@@ -424,13 +493,16 @@
                     </div>
                 </div>
 
+                <!-- Search Filter for Audit -->
                 <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 w-full">
+                    <!-- Sub Tabs Filter -->
                     <div class="flex space-x-2 bg-slate-200/60 p-1 rounded-xl w-full lg:w-fit flex-shrink-0">
                         <button id="tab-audit-pending" onclick="setAuditView('pending')" class="flex-1 sm:flex-none px-5 py-2 text-sm font-bold rounded-lg bg-white text-slate-800 shadow-sm transition">Perlu Audit</button>
                         <button id="tab-audit-done" onclick="setAuditView('done')" class="flex-1 sm:flex-none px-5 py-2 text-sm font-bold rounded-lg text-slate-500 hover:text-slate-800 hover:bg-white/50 transition">Selesai</button>
                     </div>
 
                     <div class="flex flex-col sm:flex-row gap-3 w-full lg:w-auto">
+                        <!-- Audit Status Filter (Hidden on Pending Default) -->
                         <div id="audit-status-filter-container" class="hidden relative w-full sm:w-48 flex-shrink-0">
                             <select id="auditStatusFilter" onchange="renderAuditList()" class="w-full appearance-none pl-4 pr-10 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition font-semibold text-slate-700 shadow-sm cursor-pointer truncate">
                                 <option value="Semua">Semua Status</option>
@@ -442,6 +514,7 @@
                             </div>
                         </div>
 
+                        <!-- Search Input -->
                         <div class="relative w-full sm:w-64 flex-shrink-0">
                             <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
                             <input type="text" id="auditSearchInput" onkeyup="renderAuditList()" placeholder="Cari S/N, Model..." class="w-full pl-9 pr-4 py-2 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition shadow-sm">
@@ -449,17 +522,20 @@
                     </div>
                 </div>
 
+                <!-- Audit List -->
                 <div id="audit-list-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-4">
                     <!-- Injected via JS -->
                 </div>
             </div>
 
+            <!-- VIEW: RE-CALIBRATE -->
             <div id="view-recalibrate" class="view-section hidden space-y-6">
                 <div>
                     <h2 class="text-2xl font-bold text-slate-800">Penentukuran Semula</h2>
                     <p class="text-sm text-slate-500">Kemas kini sijil bagi aset yang hampir / telah luput</p>
                 </div>
 
+                <!-- Paparan 1: Senarai Carian -->
                 <div id="recalib-list-container" class="space-y-4 transition-all duration-300">
                     <div class="relative w-full max-w-md">
                         <i data-lucide="search" class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400"></i>
@@ -476,7 +552,7 @@
                     </div>
                 </div>
 
-                <!-- Recalibration Form -->
+                <!-- Paparan 2: Borang Kemaskini Kalibrasi -->
                 <div id="recalib-form-container" class="hidden bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden transition-all duration-300">
                     <div class="p-4 md:p-6 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
                         <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -532,6 +608,7 @@
 
         </div>
 
+        <!-- Bottom Navigation (Mobile Only) -->
         <nav class="md:hidden fixed bottom-0 left-0 w-full z-30 bg-[#222222] shadow-[0_-4px_15px_rgba(0,0,0,0.2)] pb-safe">
             <div class="flex h-[64px] text-slate-400">
                 <button onclick="switchTab('dashboard')" id="nav-mobile-dashboard" class="nav-btn-mobile flex-1 flex flex-col items-center justify-center text-white bg-black transition-colors">
@@ -559,7 +636,8 @@
             </div>
         </nav>
 
-        <div id="add-modal" class="fixed inset-0 z-[120] hidden bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <!-- ADD ASSET MODAL -->
+        <div id="add-modal" class="fixed inset-0 z-[120] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
             <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="add-modal-content">
                 <div class="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
                     <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -567,29 +645,28 @@
                     </h3>
                     <button onclick="closeAddModal()" class="p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-full transition"><i data-lucide="x" class="w-5 h-5"></i></button>
                 </div>
-                
                 <div class="flex-1 overflow-y-auto p-4 md:p-6 no-scrollbar">
                     <form id="addAssetForm" onsubmit="submitNewAsset(event)" class="space-y-4 text-sm">
                         <div class="grid grid-cols-2 gap-4">
                             <div class="col-span-2 sm:col-span-1">
                                 <label class="block text-xs font-bold text-slate-600 mb-1">Kategori <span class="text-rose-500">*</span></label>
-                                <input type="text" id="add-category" required placeholder="Cth: Multimeter" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                                <input type="text" id="add-category" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
                             </div>
                             <div class="col-span-2 sm:col-span-1">
                                 <label class="block text-xs font-bold text-slate-600 mb-1">Lokasi Asal <span class="text-rose-500">*</span></label>
-                                <input type="text" id="add-location" required placeholder="Cth: Lab A" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                                <input type="text" id="add-location" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
                             </div>
                             <div class="col-span-2 sm:col-span-1">
                                 <label class="block text-xs font-bold text-slate-600 mb-1">Jenama (Make) <span class="text-rose-500">*</span></label>
-                                <input type="text" id="add-make" required placeholder="Cth: Fluke" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                                <input type="text" id="add-make" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
                             </div>
                             <div class="col-span-2 sm:col-span-1">
                                 <label class="block text-xs font-bold text-slate-600 mb-1">Model <span class="text-rose-500">*</span></label>
-                                <input type="text" id="add-model" required placeholder="Cth: 87V" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                                <input type="text" id="add-model" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
                             </div>
                             <div class="col-span-2">
                                 <label class="block text-xs font-bold text-slate-600 mb-1">No Siri (Serial No) <span class="text-rose-500">*</span></label>
-                                <input type="text" id="add-serial" required placeholder="Cth: SN-12345678" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                                <input type="text" id="add-serial" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
                             </div>
                             <div class="col-span-2 border-t border-slate-100 pt-4 mt-2">
                                 <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Maklumat Penentukuran (Calibration)</h4>
@@ -600,7 +677,7 @@
                             </div>
                             <div class="col-span-2 sm:col-span-1">
                                 <label class="block text-xs font-bold text-slate-600 mb-1">Dikalibrasi Oleh</label>
-                                <input type="text" id="add-calib" placeholder="Cth: SIRIM" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                                <input type="text" id="add-calib" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
                             </div>
                             <div class="col-span-2">
                                 <label class="block text-xs font-bold text-slate-600 mb-1">Muat Naik Sijil PDF <span class="text-xs text-slate-400 font-normal">(Pilihan)</span></label>
@@ -613,7 +690,6 @@
                         </div>
                     </form>
                 </div>
-                
                 <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
                     <button type="button" onclick="closeAddModal()" class="px-5 py-2.5 bg-white text-slate-600 border border-slate-200 font-semibold rounded-lg shadow-sm hover:bg-slate-50 transition" id="btn-cancel-add">Batal</button>
                     <button type="submit" form="addAssetForm" class="flex items-center justify-center min-w-[120px] px-5 py-2.5 bg-brand-600 text-white font-semibold rounded-lg shadow-md hover:bg-brand-500 active:scale-95 transition disabled:opacity-70 disabled:cursor-wait" id="btn-submit-add">Simpan Aset</button>
@@ -621,7 +697,8 @@
             </div>
         </div>
 
-        <div id="edit-modal" class="fixed inset-0 z-[125] hidden bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <!-- EDIT ASSET MODAL -->
+        <div id="edit-modal" class="fixed inset-0 z-[125] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
             <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="edit-modal-content">
                 <div class="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
                     <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -629,9 +706,9 @@
                     </h3>
                     <button onclick="closeEditModal()" class="p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-full transition"><i data-lucide="x" class="w-5 h-5"></i></button>
                 </div>
-                
                 <div class="flex-1 overflow-y-auto p-4 md:p-6 no-scrollbar">
                     <form id="editAssetForm" onsubmit="submitEditAsset(event)" class="space-y-4 text-sm">
+                        <!-- Ruangan edit aset -->
                         <div class="grid grid-cols-2 gap-4">
                             <div class="col-span-2 sm:col-span-1">
                                 <label class="block text-xs font-bold text-slate-600 mb-1">Kategori <span class="text-rose-500">*</span></label>
@@ -675,7 +752,6 @@
                         </div>
                     </form>
                 </div>
-                
                 <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
                     <button type="button" onclick="closeEditModal()" class="px-5 py-2.5 bg-white text-slate-600 border border-slate-200 font-semibold rounded-lg shadow-sm hover:bg-slate-50 transition" id="btn-cancel-edit">Batal</button>
                     <button type="submit" form="editAssetForm" class="flex items-center justify-center min-w-[120px] px-5 py-2.5 bg-amber-500 text-white font-semibold rounded-lg shadow-md hover:bg-amber-400 active:scale-95 transition disabled:opacity-70 disabled:cursor-wait" id="btn-submit-edit">Kemaskini</button>
@@ -683,7 +759,8 @@
             </div>
         </div>
 
-        <div id="asset-modal" class="fixed inset-0 z-[100] hidden bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <!-- ASSET DETAILS MODAL -->
+        <div id="asset-modal" class="fixed inset-0 z-[100] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
             <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="asset-modal-content">
                 <div class="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
                     <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2" id="modal-title">
@@ -712,7 +789,8 @@
             </div>
         </div>
 
-        <div id="mobiliti-modal" class="fixed inset-0 z-[120] hidden bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <!-- MOBILITI CHECKOUT MODAL -->
+        <div id="mobiliti-modal" class="fixed inset-0 z-[120] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
             <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="mobiliti-modal-content">
                 <div class="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
                     <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
@@ -763,12 +841,94 @@
                 </div>
                 
                 <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
-                    <button type="button" onclick="closeMobilitiCart()" class="px-5 py-2.5 bg-white text-slate-600 border border-slate-200 font-semibold rounded-lg shadow-sm hover:bg-slate-50 active:scale-95 transition">Batal</button>
+                    <button type="button" onclick="closeMobilitiCart()" class="px-5 py-2.5 bg-white text-slate-600 border border-slate-200 font-semibold rounded-lg shadow-sm hover:bg-slate-50 transition active:scale-95">Batal</button>
                     <button type="submit" form="mobilitiForm" id="btn-submit-mobiliti" class="flex items-center justify-center min-w-[120px] px-5 py-2.5 bg-brand-600 text-white font-semibold rounded-lg shadow-md hover:bg-brand-500 active:scale-95 transition">Sahkan Pergerakan</button>
                 </div>
             </div>
         </div>
 
+        <!-- RETURN ASSET MODAL (PULANGKAN ASET) -->
+        <div id="return-modal" class="fixed inset-0 z-[130] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="return-modal-content">
+                <div class="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="corner-down-left" class="w-5 h-5 text-brand-500"></i> Pulangkan Aset
+                    </h3>
+                    <button type="button" onclick="closeReturnModal()" class="p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-full transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div class="flex-1 p-4 md:p-6 no-scrollbar">
+                    <div class="mb-4 bg-blue-50 p-3 rounded-xl border border-blue-100">
+                        <p class="text-xs text-blue-800 font-bold uppercase tracking-wider" id="return-asset-name">Memuatkan aset...</p>
+                        <p class="text-[11px] text-blue-600 mt-1 font-semibold" id="return-asset-sn"></p>
+                    </div>
+                    <form id="returnForm" onsubmit="submitReturn(event)" class="space-y-4 text-sm">
+                        <input type="hidden" id="return-id">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Tarikh Pulang</label>
+                            <input type="text" id="return-date" readonly class="w-full px-3 py-2 bg-slate-200 border border-slate-300 rounded-lg text-slate-600 font-semibold cursor-not-allowed outline-none shadow-inner">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Kondisi Aset Semasa Dipulangkan <span class="text-rose-500">*</span></label>
+                            <select id="return-condition" required onchange="toggleReturnRemark()" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition cursor-pointer">
+                                <option value="Baik">Baik (Sempurna / Tiada Kerosakan)</option>
+                                <option value="Rosak">Rosak / Hilang Komponen</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Catatan <span class="text-xs text-slate-400 font-normal" id="return-remark-label">(Pilihan)</span></label>
+                            <textarea id="return-remark" rows="2" placeholder="Wajib diisi jika aset didapati rosak atau hilang..." class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition resize-none"></textarea>
+                        </div>
+                        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Muat Naik Gambar Fizikal <span class="text-xs text-slate-400 font-normal">(Digalakkan sebagai bukti)</span></label>
+                            <input type="file" id="return-pic" accept="image/*" class="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-brand-50 file:text-brand-700 hover:file:bg-brand-100 transition cursor-pointer text-xs">
+                        </div>
+                    </form>
+                </div>
+                <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
+                    <button type="button" onclick="closeReturnModal()" class="px-5 py-2.5 bg-white text-slate-600 border border-slate-200 font-semibold rounded-lg shadow-sm hover:bg-slate-50 transition active:scale-95">Batal</button>
+                    <button type="submit" form="returnForm" id="btn-submit-return" class="flex items-center justify-center min-w-[120px] px-5 py-2.5 bg-brand-600 text-white font-semibold rounded-lg shadow-md hover:bg-brand-500 active:scale-95 transition">Sahkan Pulang</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN APPROVAL MODAL -->
+        <div id="approval-modal" class="fixed inset-0 z-[135] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="approval-modal-content">
+                <div class="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="check-square" class="w-5 h-5 text-emerald-500"></i> Pengesahan Penerimaan Admin
+                    </h3>
+                    <button type="button" onclick="closeApprovalModal()" class="p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-full transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div class="flex-1 p-4 md:p-6 no-scrollbar">
+                    <div class="mb-4 bg-emerald-50 p-3 rounded-xl border border-emerald-100">
+                        <p class="text-xs text-emerald-800 font-bold uppercase tracking-wider" id="approval-asset-name">Memuatkan aset...</p>
+                        <p class="text-[11px] text-emerald-600 mt-1 font-semibold" id="approval-asset-sn"></p>
+                    </div>
+                    <form id="approvalForm" onsubmit="submitApproval(event)" class="space-y-4 text-sm">
+                        <input type="hidden" id="approval-id">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Pengesahan Kondisi Fizikal <span class="text-rose-500">*</span></label>
+                            <select id="approval-condition" required class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition cursor-pointer">
+                                <option value="Baik">Baik (Sempurna / Tiada Kerosakan)</option>
+                                <option value="Rosak">Rosak</option>
+                                <option value="Hilang Komponen">Hilang Komponen</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 mb-1">Lokasi Ditempatkan Semula <span class="text-rose-500">*</span></label>
+                            <input type="text" id="approval-location" required placeholder="Cth: Lab A, Almari 2" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                        </div>
+                    </form>
+                </div>
+                <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
+                    <button type="button" onclick="closeApprovalModal()" class="px-5 py-2.5 bg-white text-slate-600 border border-slate-200 font-semibold rounded-lg shadow-sm hover:bg-slate-50 transition active:scale-95">Batal</button>
+                    <button type="submit" form="approvalForm" id="btn-submit-approval" class="flex items-center justify-center min-w-[120px] px-5 py-2.5 bg-emerald-600 text-white font-semibold rounded-lg shadow-md hover:bg-emerald-500 active:scale-95 transition">Selesai Pengesahan</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PDF Viewer Modal -->
         <div id="pdf-modal" class="fixed inset-0 z-[110] hidden bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-2 md:p-6 opacity-0 transition-opacity duration-300">
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-full md:h-[90vh] flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="pdf-modal-content">
                 <div class="flex items-center justify-between p-3 bg-slate-800 text-white shadow-md z-10">
@@ -789,6 +949,7 @@
             </div>
         </div>
 
+        <!-- Audit Image Viewer Modal -->
         <div id="audit-img-modal" class="fixed inset-0 z-[115] hidden bg-slate-900/90 backdrop-blur-md flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="audit-img-modal-content">
                 <div class="flex items-center justify-between p-4 bg-slate-800 text-white shadow-md z-10">
@@ -811,6 +972,62 @@
             </div>
         </div>
 
+        <!-- PROFILE SETTINGS MODAL -->
+        <div id="profile-modal" class="fixed inset-0 z-[140] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+            <div class="bg-white rounded-2xl shadow-xl w-full max-w-md flex flex-col overflow-hidden scale-95 transition-transform duration-300" id="profile-modal-content">
+                <div class="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+                        <i data-lucide="user-cog" class="w-5 h-5 text-brand-500"></i> Tetapan Profil
+                    </h3>
+                    <button type="button" onclick="closeProfileModal()" class="p-2 text-slate-400 hover:bg-slate-200 hover:text-slate-600 rounded-full transition"><i data-lucide="x" class="w-5 h-5"></i></button>
+                </div>
+                <div class="flex-1 p-4 md:p-6 overflow-y-auto no-scrollbar">
+                    <form id="profileForm" onsubmit="submitProfileUpdate(event)" class="space-y-5 text-sm">
+                        <!-- Profile Picture Section -->
+                        <div class="flex flex-col items-center justify-center space-y-3 pb-5 border-b border-slate-100">
+                            <div class="relative group">
+                                <img id="profile-modal-pic" src="" class="w-24 h-24 rounded-full object-cover border-4 border-slate-100 shadow-md transition-all">
+                                <label for="profile-pic-upload" class="absolute bottom-0 right-0 p-2 bg-brand-600 text-white rounded-full shadow-lg cursor-pointer hover:bg-brand-500 hover:scale-110 transition-transform flex items-center justify-center">
+                                    <i data-lucide="camera" class="w-4 h-4"></i>
+                                </label>
+                                <input type="file" id="profile-pic-upload" accept="image/*" class="hidden" onchange="previewProfilePic(event)">
+                            </div>
+                            <div class="text-center mt-2">
+                                <p class="text-base font-bold text-slate-800" id="profile-modal-name">-</p>
+                                <p class="text-xs text-brand-600 font-semibold uppercase tracking-wider mt-0.5" id="profile-modal-role">-</p>
+                            </div>
+                        </div>
+
+                        <!-- Password Section -->
+                        <div class="space-y-4">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tukar Kata Laluan</h4>
+                            <div class="bg-blue-50 border border-blue-100 p-3 rounded-xl flex gap-3 text-xs text-blue-800 shadow-sm mb-2">
+                                <i data-lucide="info" class="w-4 h-4 flex-shrink-0 text-blue-500"></i>
+                                <p>Biarkan ruangan ini kosong jika anda hanya ingin menukar gambar profil.</p>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Kata Laluan Semasa</label>
+                                <input type="password" id="profile-old-pwd" placeholder="Masukkan kata laluan sedia ada" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Kata Laluan Baharu</label>
+                                <input type="password" id="profile-new-pwd" placeholder="Masukkan kata laluan baharu" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-600 mb-1">Sahkan Kata Laluan Baharu</label>
+                                <input type="password" id="profile-confirm-pwd" placeholder="Ulang kata laluan baharu" class="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg focus:bg-white focus:ring-2 focus:ring-brand-500 focus:border-brand-500 outline-none transition">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
+                    <button type="button" onclick="closeProfileModal()" class="px-5 py-2.5 bg-white text-slate-600 border border-slate-200 font-semibold rounded-lg shadow-sm hover:bg-slate-50 transition active:scale-95">Batal</button>
+                    <button type="submit" form="profileForm" id="btn-submit-profile" class="flex items-center justify-center min-w-[120px] px-5 py-2.5 bg-brand-600 text-white font-semibold rounded-lg shadow-md hover:bg-brand-500 active:scale-95 transition">Simpan Tetapan</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast and Alert Containers -->
         <div id="toast-container" class="fixed top-4 right-4 md:top-8 md:right-8 z-[150] flex flex-col gap-2 pointer-events-none"></div>
 
         <div id="custom-alert-modal" class="fixed inset-0 z-[150] hidden bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
@@ -833,13 +1050,14 @@
         const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQvA59NaAn4pJNF06QFAOPhTlr9iVz9GXxgC9svC3vJveeVJsE05-xa6r1VboOFuVQQwE6VLXLUgwye/pub?gid=1244661157&single=true&output=csv';
         
         // URL WEB APP APPS SCRIPT ANDA
-        const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzfHSU40sPvEYGtVNnBzvWulDT6dJGV6VbagSvOOPl6mKQCu3EHO3kjnQ4K4sXnEHdgnQ/exec';
+        const APP_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzk9RyrC-7bzjwd5Bohb4dKpejGLnNntJ5WELCFRT9HkiDa99d1G4A_6xwoIDX_FrXXvw/exec';
         
         // URL PANGKALAN DATA PEKERJA (Auth)
         const AUTH_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQvA59NaAn4pJNF06QFAOPhTlr9iVz9GXxgC9svC3vJveeVJsE05-xa6r1VboOFuVQQwE6VLXLUgwye/pub?gid=314892623&single=true&output=csv';
         
         let globalData = [];
         let authData = [];
+        let mobilitiLogData = []; // PEMBETULAN: Ditambah untuk mengelakkan ralat ReferenceError di tab sejarah
         let currentUser = null;
 
         let myChart = null;
@@ -861,7 +1079,7 @@
         lucide.createIcons();
 
         document.addEventListener('DOMContentLoaded', () => {
-            loadAuthData(); // Muat turun data pekerja dahulu
+            loadAuthData(); 
         });
 
         function loadAuthData() {
@@ -871,11 +1089,11 @@
 
             Papa.parse(AUTH_URL, {
                 download: true,
-                header: false, // Index 0=ID, 1=Name, 2=Role, 3=Pwd, 4=Pic
+                header: false,
                 skipEmptyLines: true,
                 complete: function(results) {
                     if(results.data[0] && results.data[0][0].toLowerCase() === 'id') {
-                        authData = results.data.slice(1); // Buang baris header jika wujud
+                        authData = results.data.slice(1);
                     } else {
                         authData = results.data;
                     }
@@ -922,7 +1140,7 @@
                     setTimeout(() => {
                         loginScreen.classList.add('hidden');
                         showToast(`Selamat datang, ${currentUser.name}!`, "info");
-                        loadData(); // Muat turun AMS Aset selepas log masuk berjaya
+                        loadData();
                     }, 300);
                 } else {
                     showToast("ID Pekerja atau Kata Laluan tidak sah!", "error");
@@ -930,7 +1148,7 @@
                 
                 btnLogin.innerHTML = `Log Masuk`;
                 btnLogin.disabled = false;
-            }, 800); // Simulasi pengesahan
+            }, 800);
         }
 
         function logout() {
@@ -963,17 +1181,38 @@
 
             if(!picUrl || picUrl.trim() === '') picUrl = `https://placehold.co/100x100/0ea5e9/ffffff?text=${currentUser.name.charAt(0).toUpperCase()}`;
 
-            // Papan Pemuka Desktop
             document.getElementById('desktop-user-profile').classList.remove('hidden');
             document.getElementById('desktop-user-pic').src = picUrl;
             document.getElementById('desktop-user-name').innerText = currentUser.name;
             document.getElementById('desktop-user-role').innerText = currentUser.designation;
 
-            // Navigasi Mudah Alih
             const mobilePic = document.getElementById('mobile-user-pic');
             mobilePic.src = picUrl;
             mobilePic.classList.remove('hidden');
             document.getElementById('mobile-logout-btn').classList.remove('hidden');
+            document.getElementById('mobile-settings-btn').classList.remove('hidden');
+        }
+
+        function logout() {
+            currentUser = null;
+            const loginScreen = document.getElementById('login-screen');
+            loginScreen.classList.remove('hidden');
+            setTimeout(() => {
+                loginScreen.classList.remove('opacity-0');
+                document.getElementById('login-card').classList.add('scale-100');
+                document.getElementById('login-card').classList.remove('scale-95');
+            }, 10);
+            
+            document.getElementById('loginForm').reset();
+            
+            document.getElementById('desktop-user-profile').classList.add('hidden');
+            document.getElementById('mobile-user-pic').classList.add('hidden');
+            document.getElementById('mobile-logout-btn').classList.add('hidden');
+            document.getElementById('mobile-settings-btn').classList.add('hidden');
+
+            globalData = [];
+            document.getElementById('asset-tbody').innerHTML = '';
+            document.getElementById('asset-cards').innerHTML = '';
         }
 
         function applyAccessControl() {
@@ -985,7 +1224,6 @@
             const btnRecalibMobile = document.getElementById('nav-mobile-recalibrate');
             const btnTambahAset = document.getElementById('btn-tambah-aset');
 
-            // Reset paparan kepada lalai
             if(btnAuditDesktop) btnAuditDesktop.classList.remove('hidden');
             if(btnAuditMobile) btnAuditMobile.classList.remove('hidden');
             if(btnRecalibDesktop) btnRecalibDesktop.classList.remove('hidden');
@@ -994,13 +1232,13 @@
 
             if (role === 'admin') {
                 // Admin akses penuh
+                const tabMobApproval = document.getElementById('tab-mob-approval');
+                if(tabMobApproval) tabMobApproval.classList.remove('hidden');
             } else if (role === 'auditor') {
-                // Auditor tidak boleh tambah dan kalibrasi semula
                 if(btnTambahAset) btnTambahAset.classList.add('hidden');
                 if(btnRecalibDesktop) btnRecalibDesktop.classList.add('hidden');
                 if(btnRecalibMobile) btnRecalibMobile.classList.add('hidden');
             } else {
-                // Staf tidak boleh tambah, audit, dan kalibrasi
                 if(btnTambahAset) btnTambahAset.classList.add('hidden');
                 if(btnAuditDesktop) btnAuditDesktop.classList.add('hidden');
                 if(btnAuditMobile) btnAuditMobile.classList.add('hidden');
@@ -1008,7 +1246,7 @@
                 if(btnRecalibMobile) btnRecalibMobile.classList.add('hidden');
             }
 
-            switchTab('dashboard'); // Kembali ke paparan utama
+            switchTab('dashboard'); 
         }
 
         function showToast(message, type = 'info') {
@@ -1107,6 +1345,7 @@
                 renderAuditList();
             }
             if(tabId === 'mobiliti') {
+                switchMobilitiTab('new'); // Default tunjuk troli pinjam
                 renderMobilitiAssets();
             }
         }
@@ -1234,6 +1473,7 @@
             }
             if (!document.getElementById('view-mobiliti').classList.contains('hidden')) {
                 renderMobilitiAssets();
+                renderMobilitiHistory();
             }
         }
 
@@ -1557,6 +1797,411 @@
             });
 
             renderAssets(filteredData);
+        }
+
+        function switchMobilitiTab(tab) {
+            const tabs = ['new', 'history', 'approval'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-mob-${t}`);
+                const section = document.getElementById(`mobiliti-${t}-section`);
+                if (!btn || !section) return;
+
+                if (t === tab) {
+                    btn.classList.replace('text-slate-500', 'text-slate-800');
+                    btn.classList.add('bg-white', 'shadow-sm');
+                    btn.classList.remove('hover:bg-white/50');
+                    section.classList.remove('hidden');
+                } else {
+                    btn.classList.replace('text-slate-800', 'text-slate-500');
+                    btn.classList.remove('bg-white', 'shadow-sm');
+                    btn.classList.add('hover:bg-white/50');
+                    section.classList.add('hidden');
+                }
+            });
+
+            if(tab === 'history') {
+                renderMobilitiHistory();
+            } else if(tab === 'approval') {
+                renderMobilitiApproval();
+            }
+        }
+
+        function switchHistorySubTab(subTab) {
+            if(subTab === 'active') {
+                document.getElementById('subtab-active').classList.replace('border-transparent', 'border-brand-600');
+                document.getElementById('subtab-active').classList.replace('text-slate-500', 'text-brand-600');
+                document.getElementById('subtab-past').classList.replace('border-brand-600', 'border-transparent');
+                document.getElementById('subtab-past').classList.replace('text-brand-600', 'text-slate-500');
+                
+                document.getElementById('history-active-list').classList.remove('hidden');
+                document.getElementById('history-past-list').classList.add('hidden');
+            } else {
+                document.getElementById('subtab-past').classList.replace('border-transparent', 'border-brand-600');
+                document.getElementById('subtab-past').classList.replace('text-slate-500', 'text-brand-600');
+                document.getElementById('subtab-active').classList.replace('border-brand-600', 'border-transparent');
+                document.getElementById('subtab-active').classList.replace('text-brand-600', 'text-slate-500');
+                
+                document.getElementById('history-past-list').classList.remove('hidden');
+                document.getElementById('history-active-list').classList.add('hidden');
+            }
+        }
+
+        function renderMobilitiHistory() {
+            // 1. PINJAMAN AKTIF
+            const activeListContainer = document.getElementById('history-active-list');
+            
+            let activeLoans = globalData.filter(item => {
+                let statusPinjamanRaw = item['Status Pinjaman'] || '';
+                let isDipinjam = statusPinjamanRaw.trim().toLowerCase() === 'dipinjam';
+                let isCurrentHolder = currentUser && (item['Current Holder'] === currentUser.name);
+                return isDipinjam && isCurrentHolder;
+            });
+
+            if (activeLoans.length === 0) {
+                activeListContainer.innerHTML = `
+                    <div class="col-span-full py-10 flex flex-col items-center justify-center text-slate-400 bg-white rounded-xl border border-dashed border-slate-200">
+                        <i data-lucide="check-circle" class="w-10 h-10 mb-2 opacity-50 text-emerald-500"></i>
+                        <p class="text-sm font-medium">Tiada pinjaman aktif setakat ini.</p>
+                    </div>
+                `;
+            } else {
+                let activeHtml = '';
+                activeLoans.forEach(item => {
+                    activeHtml += `
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-brand-200 flex flex-col sm:flex-row justify-between gap-4">
+                            <div class="flex-1">
+                                <span class="px-2 py-0.5 text-[9px] font-bold rounded bg-blue-100 text-blue-800 border border-blue-200 mb-2 inline-block shadow-sm">SEDANG DIPINJAM</span>
+                                <h3 class="text-base font-bold text-slate-800 leading-tight">${item['Make'] || ''} ${item['Model'] || ''}</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">S/N: ${item['Serial No'] || '-'}</p>
+                                
+                                <div class="mt-3 flex items-center text-xs text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                                    <i data-lucide="user" class="w-3.5 h-3.5 mr-1.5 text-brand-500"></i> Dipinjam Oleh: <strong class="ml-1">${item['Current Holder'] || '-'}</strong>
+                                </div>
+                            </div>
+                            <div class="flex flex-col justify-end sm:w-32">
+                                <button onclick="openReturnModal(${item._id})" class="w-full py-2 bg-brand-50 text-brand-600 font-bold border border-brand-200 rounded-lg hover:bg-brand-600 hover:text-white transition-colors flex items-center justify-center gap-1.5 shadow-sm active:scale-95 text-xs">
+                                    <i data-lucide="corner-down-left" class="w-3.5 h-3.5"></i> Pulangkan
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                activeListContainer.innerHTML = activeHtml;
+            }
+
+            // 2. SEJARAH LEPAS (Dari Database Sebenar Log Mobiliti)
+            const pastListContainer = document.getElementById('history-past-list');
+            
+            let pastHistory = mobilitiLogData.filter(item => {
+                let statusLog = item['Status Log'] || '';
+                let isSelesai = statusLog.trim() === 'Selesai';
+                let isCurrentPeminjam = currentUser && (item['Nama Peminjam'] === currentUser.name);
+                return isSelesai && isCurrentPeminjam;
+            });
+
+            // Susun terbalik agar rekod yang paling baharu berada di atas
+            pastHistory.reverse();
+
+            if (pastHistory.length === 0) {
+                pastListContainer.innerHTML = `
+                    <div class="col-span-full py-10 flex flex-col items-center justify-center text-slate-400 bg-white rounded-xl border border-dashed border-slate-200">
+                        <i data-lucide="history" class="w-10 h-10 mb-2 opacity-50 text-slate-400"></i>
+                        <p class="text-sm font-medium">Tiada sejarah pinjaman lepas setakat ini.</p>
+                    </div>
+                `;
+            } else {
+                let pastHtml = '';
+                pastHistory.forEach(item => {
+                    let condition = item['Kondisi Akhir'] || item['Kondisi Semasa Pulang'] || 'Baik';
+                    let badgeCond = condition.toLowerCase().includes('baik') ? 'bg-emerald-100 text-emerald-800 border-emerald-200' : 'bg-rose-100 text-rose-800 border-rose-200';
+                    
+                    pastHtml += `
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-800">${item['Make'] || ''} ${item['Model'] || ''}</h3>
+                                    <p class="text-[10px] text-slate-500 mt-0.5">S/N: ${item['Serial No'] || '-'}</p>
+                                </div>
+                                <span class="px-2 py-0.5 text-[9px] font-bold rounded bg-slate-100 text-slate-600 border border-slate-200">${item['Status Log'] || 'Selesai'}</span>
+                            </div>
+                            <div class="grid grid-cols-2 gap-2 mt-3 text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                <div><span class="text-slate-400 block text-[9px] uppercase font-bold">Tarikh Pinjam</span> <strong>${item['Tarikh (Timestamp)'] || '-'}</strong></div>
+                                <div><span class="text-slate-400 block text-[9px] uppercase font-bold">Tarikh Pulang</span> <strong>${item['Tarikh Disahkan (Admin)'] || item['Tarikh Pulang'] || '-'}</strong></div>
+                                <div class="col-span-2 pt-2 border-t border-slate-200 mt-1">
+                                    <span class="text-slate-400 block text-[9px] uppercase font-bold mb-0.5">Kondisi Dipulangkan</span> 
+                                    <span class="px-1.5 py-0.5 rounded text-[10px] font-bold border ${badgeCond}">${condition}</span>
+                                    <span class="text-slate-400 text-[10px] ml-1">(Sahkan oleh: ${item['Admin Pengesah'] || 'Sistem'})</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                pastListContainer.innerHTML = pastHtml;
+            }
+
+            lucide.createIcons();
+        }
+
+        function openReturnModal(id) {
+            const item = globalData.find(d => d._id === id);
+            if(!item) return;
+
+            document.getElementById('return-id').value = id;
+            document.getElementById('return-asset-name').innerText = `${item['Make'] || ''} ${item['Model'] || ''}`;
+            document.getElementById('return-asset-sn').innerText = `S/N: ${item['Serial No'] || '-'}`;
+
+            // Auto Date Today
+            const today = new Date();
+            const dd = String(today.getDate()).padStart(2, '0');
+            const mm = String(today.getMonth() + 1).padStart(2, '0');
+            const yyyy = today.getFullYear();
+            document.getElementById('return-date').value = `${dd}/${mm}/${yyyy}`;
+
+            document.getElementById('return-condition').value = 'Baik';
+            document.getElementById('return-remark').value = '';
+            document.getElementById('return-pic').value = '';
+            toggleReturnRemark(); // reset required state
+
+            const modal = document.getElementById('return-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                document.getElementById('return-modal-content').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeReturnModal() {
+            const modal = document.getElementById('return-modal');
+            modal.classList.add('opacity-0');
+            document.getElementById('return-modal-content').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function toggleReturnRemark() {
+            const cond = document.getElementById('return-condition').value;
+            const remarkInput = document.getElementById('return-remark');
+            const remarkLabel = document.getElementById('return-remark-label');
+            const picInput = document.getElementById('return-pic');
+            const picLabel = document.getElementById('return-pic-label');
+
+            if (cond === 'Rosak') {
+                if (remarkInput) remarkInput.required = true;
+                if (remarkLabel) {
+                    remarkLabel.innerText = "(Wajib diisi)";
+                    remarkLabel.classList.replace('text-slate-400', 'text-rose-500');
+                    remarkLabel.classList.add('font-bold');
+                }
+
+                if (picInput) picInput.required = true;
+                if (picLabel) {
+                    picLabel.innerText = "(Wajib muat naik bukti kerosakan)";
+                    picLabel.classList.replace('text-slate-400', 'text-rose-500');
+                    picLabel.classList.add('font-bold');
+                }
+            } else {
+                if (remarkInput) remarkInput.required = false;
+                if (remarkLabel) {
+                    remarkLabel.innerText = "(Pilihan)";
+                    remarkLabel.classList.replace('text-rose-500', 'text-slate-400');
+                    remarkLabel.classList.remove('font-bold');
+                }
+
+                if (picInput) picInput.required = false;
+                if (picLabel) {
+                    picLabel.innerText = "(Digalakkan sebagai bukti)";
+                    picLabel.classList.replace('text-rose-500', 'text-slate-400');
+                    picLabel.classList.remove('font-bold');
+                }
+            }
+        }
+
+        async function submitReturn(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit-return');
+            const originalText = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-2"></i> Memproses...`;
+            lucide.createIcons();
+
+            try {
+                const id = document.getElementById('return-id').value;
+                const item = globalData.find(d => d._id == id);
+                if (!item) throw new Error("Maklumat aset tidak ditemui.");
+
+                const picFile = document.getElementById('return-pic').files[0];
+                let imgBase64 = '', imgMimeType = '', imgName = '';
+                if (picFile) {
+                    imgBase64 = await getBase64(picFile);
+                    imgMimeType = picFile.type;
+                    imgName = picFile.name;
+                }
+
+                const payloadData = {
+                    action: 'return',
+                    rowId: item._rowId,
+                    serialNo: item['Serial No'] ? String(item['Serial No']).trim() : '',
+                    nama: currentUser ? currentUser.name : '',
+                    returnDate: document.getElementById('return-date').value,
+                    returnCondition: document.getElementById('return-condition').value,
+                    returnRemark: document.getElementById('return-remark').value,
+                    imgBase64: imgBase64,
+                    imgMimeType: imgMimeType,
+                    imgName: imgName
+                };
+
+                const response = await fetch(APP_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payloadData)
+                });
+
+                const result = await response.json();
+
+                if (result.status === "success") {
+                    showCustomAlert("Pemulangan Aset Berjaya!\n\nAset ini kini berstatus 'Menunggu Pengesahan'. Admin akan mengesahkan pemulangan secara fizikal sebelum status ditukar sepenuhnya kepada Tersedia.");
+                    closeReturnModal();
+                    
+                    setTimeout(() => { loadData(); }, 1500); // Segar semula data terus dari Sheets
+                } else {
+                    throw new Error(result.message);
+                }
+
+            } catch (error) {
+                console.error("Ralat Pemulangan:", error);
+                let errorMsg = error.message;
+                if (errorMsg.includes("tidak dijumpai")) {
+                    errorMsg += "\n\n(Tip: Ralat ini biasanya berlaku jika rekod diuji/ditukar secara manual dalam Masterlist, tetapi tiada rekod pinjaman sebenar dicipta di dalam helaian Log Mobiliti.)";
+                }
+                showCustomAlert("Ralat berlaku ketika memproses pemulangan:\n\n" + errorMsg);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
+        }
+
+        function renderMobilitiApproval() {
+            const approvalListContainer = document.getElementById('approval-pending-list');
+            
+            let pendingLoans = globalData.filter(item => {
+                let statusPinjamanRaw = item['Status Pinjaman'] || '';
+                return statusPinjamanRaw.trim().toLowerCase() === 'menunggu pengesahan';
+            });
+
+            if (pendingLoans.length === 0) {
+                approvalListContainer.innerHTML = `
+                    <div class="col-span-full py-10 flex flex-col items-center justify-center text-slate-400 bg-white rounded-xl border border-dashed border-slate-200 shadow-sm">
+                        <i data-lucide="check-circle-2" class="w-10 h-10 mb-2 opacity-50 text-emerald-500"></i>
+                        <p class="text-sm font-medium">Tiada pemulangan yang perlu disahkan oleh Admin buat masa ini.</p>
+                    </div>
+                `;
+            } else {
+                let approvalHtml = '';
+                pendingLoans.forEach(item => {
+                    approvalHtml += `
+                        <div class="bg-white p-4 rounded-xl shadow-sm border border-amber-200 flex flex-col sm:flex-row justify-between gap-4">
+                            <div class="flex-1">
+                                <span class="px-2 py-0.5 text-[9px] font-bold rounded bg-amber-100 text-amber-800 border border-amber-200 mb-2 inline-block shadow-sm">MENUNGGU PENGESAHAN</span>
+                                <h3 class="text-base font-bold text-slate-800 leading-tight">${item['Make'] || ''} ${item['Model'] || ''}</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">S/N: ${item['Serial No'] || '-'}</p>
+                                
+                                <div class="mt-3 flex flex-col gap-1.5 text-xs text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                                    <p><i data-lucide="user" class="w-3.5 h-3.5 inline text-brand-500 mr-1"></i> Dipulangkan Oleh: <strong>${item['Current Holder'] || '-'}</strong></p>
+                                    <p><i data-lucide="image" class="w-3.5 h-3.5 inline text-emerald-500 mr-1"></i> Lampiran Staf: <button onclick="showToast('Sistem memaparkan bukti gambar...', 'info')" class="text-brand-600 font-semibold hover:underline">Lihat Bukti</button></p>
+                                </div>
+                            </div>
+                            <div class="flex flex-col justify-end sm:w-36">
+                                <button onclick="openApprovalModal(${item._id})" class="w-full py-2 bg-emerald-50 text-emerald-600 font-bold border border-emerald-200 rounded-lg hover:bg-emerald-600 hover:text-white transition-colors flex items-center justify-center gap-1.5 shadow-sm active:scale-95 text-xs">
+                                    <i data-lucide="check-square" class="w-3.5 h-3.5"></i> Sahkan Penerimaan
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                });
+                approvalListContainer.innerHTML = approvalHtml;
+            }
+            lucide.createIcons();
+        }
+
+        function openApprovalModal(id) {
+            const item = globalData.find(d => d._id === id);
+            if(!item) return;
+
+            document.getElementById('approval-id').value = id;
+            document.getElementById('approval-asset-name').innerText = `${item['Make'] || ''} ${item['Model'] || ''}`;
+            document.getElementById('approval-asset-sn').innerText = `S/N: ${item['Serial No'] || '-'}`;
+            document.getElementById('approval-condition').value = 'Baik';
+            document.getElementById('approval-location').value = item['Location Origin'] || '';
+
+            const modal = document.getElementById('approval-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                document.getElementById('approval-modal-content').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeApprovalModal() {
+            const modal = document.getElementById('approval-modal');
+            modal.classList.add('opacity-0');
+            document.getElementById('approval-modal-content').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        async function submitApproval(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btn-submit-approval');
+            const originalText = btn.innerHTML;
+            
+            btn.disabled = true;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-2"></i> Memproses...`;
+            lucide.createIcons();
+
+            try {
+                const id = document.getElementById('approval-id').value;
+                const item = globalData.find(d => d._id == id);
+                if (!item) throw new Error("Maklumat aset tidak ditemui.");
+
+                const newLocation = document.getElementById('approval-location').value;
+                const condition = document.getElementById('approval-condition').value;
+
+                const payloadData = {
+                    action: 'approve_return',
+                    rowId: item._rowId,
+                    serialNo: item['Serial No'] ? String(item['Serial No']).trim() : '',
+                    approveCondition: condition,
+                    approveLocation: newLocation,
+                    adminName: currentUser ? currentUser.name : "Admin"
+                };
+
+                const response = await fetch(APP_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payloadData)
+                });
+
+                const result = await response.json();
+
+                if (result.status === "success") {
+                    showCustomAlert("Pengesahan Pemulangan Berjaya!\n\nAset kini dikemaskini sebagai 'Tersedia' dan ditempatkan di " + newLocation + ". Rekod ini disimpan secara sah dalam Log Mobiliti.");
+                    closeApprovalModal();
+                    
+                    setTimeout(() => { loadData(); }, 1500); // Segar semula data
+                } else {
+                    throw new Error(result.message);
+                }
+
+            } catch (error) {
+                console.error("Ralat Pengesahan Admin:", error);
+                showCustomAlert("Ralat berlaku ketika memproses pengesahan: " + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            }
         }
 
         function toggleMobilitiCart(id) {
@@ -2340,7 +2985,6 @@
             }
 
             const isAuditView = !document.getElementById('view-audit').classList.contains('hidden');
-            
             const canEdit = currentUser && currentUser.designation.toLowerCase() === 'admin';
 
             if(!isAuditView && canEdit) {
@@ -2742,6 +3386,130 @@
                 submitBtn.disabled = false;
                 cancelBtn.disabled = false;
                 submitBtn.innerHTML = `Simpan Aset`;
+            }
+        }
+
+        function openProfileModal() {
+            if (!currentUser) return;
+            
+            document.getElementById('profile-modal-name').innerText = currentUser.name;
+            document.getElementById('profile-modal-role').innerText = currentUser.designation;
+            
+            let picUrl = currentUser.pic;
+            const driveId = getDriveId(picUrl);
+            if(driveId) picUrl = `https://lh3.googleusercontent.com/d/${driveId}`;
+            if(!picUrl || picUrl.trim() === '') picUrl = `https://placehold.co/100x100/0ea5e9/ffffff?text=${currentUser.name.charAt(0).toUpperCase()}`;
+            
+            document.getElementById('profile-modal-pic').src = picUrl;
+            document.getElementById('profileForm').reset();
+            
+            const modal = document.getElementById('profile-modal');
+            modal.classList.remove('hidden');
+            lucide.createIcons();
+            setTimeout(() => {
+                modal.classList.remove('opacity-0');
+                document.getElementById('profile-modal-content').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function closeProfileModal() {
+            const modal = document.getElementById('profile-modal');
+            modal.classList.add('opacity-0');
+            document.getElementById('profile-modal-content').classList.add('scale-95');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        function previewProfilePic(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('profile-modal-pic').src = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        async function submitProfileUpdate(e) {
+            e.preventDefault();
+            
+            const newPwd = document.getElementById('profile-new-pwd').value;
+            const confirmPwd = document.getElementById('profile-confirm-pwd').value;
+            
+            if (newPwd && newPwd !== confirmPwd) {
+                showToast("Kata laluan baharu tidak sepadan. Sila semak semula.", "error");
+                return;
+            }
+            
+            const btn = document.getElementById('btn-submit-profile');
+            const originalText = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin mr-2"></i> Menyimpan...`;
+            lucide.createIcons();
+            
+            try {
+                const picFile = document.getElementById('profile-pic-upload').files[0];
+                let imgBase64 = '', imgMimeType = '', imgName = '';
+                
+                if (picFile) {
+                    imgBase64 = await getBase64(picFile);
+                    imgMimeType = picFile.type;
+                    imgName = picFile.name;
+                }
+
+                if (!newPwd && !imgBase64) {
+                    showToast("Tiada perubahan dikesan.", "info");
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                    closeProfileModal();
+                    return;
+                }
+
+                const payloadData = {
+                    action: 'update_profile',
+                    userId: currentUser.id,
+                    newPassword: newPwd,
+                    imgBase64: imgBase64,
+                    imgMimeType: imgMimeType,
+                    imgName: imgName
+                };
+
+                const response = await fetch(APP_SCRIPT_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payloadData)
+                });
+
+                const result = await response.json();
+
+                if (result.status === "success") {
+                    showCustomAlert("Profil berjaya dikemaskini!\n\nPerubahan telah disimpan ke dalam sistem (Google Sheets).");
+                    
+                    // Segar semula data auth di latar belakang supaya kata laluan baharu aktif
+                    loadAuthData(); 
+                    
+                    // Kemaskini UI secara langsung jika ada gambar baharu
+                    if (imgBase64) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            currentUser.pic = e.target.result;
+                            setupUserProfile();
+                        }
+                        reader.readAsDataURL(picFile);
+                    }
+                    
+                    closeProfileModal();
+                } else {
+                    throw new Error(result.message);
+                }
+            } catch (error) {
+                console.error("Ralat Kemaskini Profil:", error);
+                showCustomAlert("Ralat berlaku ketika menyimpan tetapan: " + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalText;
             }
         }
     </script>
