@@ -780,7 +780,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="p-4 bg-slate-50 border-t border-slate-200 flex justify-end" id="modal-cert-container">
+                <div class="p-4 bg-slate-50 border-t border-slate-200 flex flex-wrap justify-end gap-2" id="modal-cert-container">
                     <!-- Button injected here -->
                 </div>
                 <div id="modal-audit-action-container" class="hidden bg-white border-t border-slate-200">
@@ -935,9 +935,14 @@
                     <h3 class="text-sm md:text-base font-semibold flex items-center gap-2">
                         <i data-lucide="file-text" class="w-4 h-4 text-brand-400"></i> Paparan Sijil (PDF)
                     </h3>
-                    <button onclick="closePdfModal()" class="p-1.5 text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg transition-colors flex items-center gap-1 text-xs font-medium">
-                        <i data-lucide="x" class="w-4 h-4"></i> Tutup
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <a id="pdf-download-btn" href="#" target="_blank" download class="p-1.5 px-3 bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white rounded-lg transition-colors flex items-center gap-1.5 text-xs font-medium border border-emerald-500/30">
+                            <i data-lucide="download" class="w-4 h-4"></i> <span class="hidden sm:inline">Muat Turun</span>
+                        </a>
+                        <button onclick="closePdfModal()" class="p-1.5 text-slate-300 hover:bg-slate-700 hover:text-white rounded-lg transition-colors flex items-center gap-1 text-xs font-medium">
+                            <i data-lucide="x" class="w-4 h-4"></i> <span class="hidden sm:inline">Tutup</span>
+                        </button>
+                    </div>
                 </div>
                 <div class="flex-1 bg-slate-200 relative w-full h-full">
                     <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
@@ -1149,27 +1154,6 @@
                 btnLogin.innerHTML = `Log Masuk`;
                 btnLogin.disabled = false;
             }, 800);
-        }
-
-        function logout() {
-            currentUser = null;
-            const loginScreen = document.getElementById('login-screen');
-            loginScreen.classList.remove('hidden');
-            setTimeout(() => {
-                loginScreen.classList.remove('opacity-0');
-                document.getElementById('login-card').classList.add('scale-100');
-                document.getElementById('login-card').classList.remove('scale-95');
-            }, 10);
-            
-            document.getElementById('loginForm').reset();
-            
-            document.getElementById('desktop-user-profile').classList.add('hidden');
-            document.getElementById('mobile-user-pic').classList.add('hidden');
-            document.getElementById('mobile-logout-btn').classList.add('hidden');
-
-            globalData = [];
-            document.getElementById('asset-tbody').innerHTML = '';
-            document.getElementById('asset-cards').innerHTML = '';
         }
 
         function setupUserProfile() {
@@ -2966,13 +2950,22 @@
 
             const certContainer = document.getElementById('modal-cert-container');
             const certUrl = item['Cert'];
-            let buttonsHtml = '<div class="flex gap-2">';
+            let buttonsHtml = '<div class="flex flex-wrap gap-2">';
             
             if (certUrl && certUrl.trim() !== '' && certUrl.toLowerCase() !== 'n/a') {
+                let downloadUrl = certUrl;
+                const docDriveId = getDriveId(certUrl);
+                
+                // Jika ia pautan Google Drive, formatkan untuk muat turun secara langsung
+                if (docDriveId) {
+                    downloadUrl = `https://drive.google.com/uc?export=download&id=${docDriveId}`;
+                }
+
                 buttonsHtml += `
-                    <button onclick="openPdfModal('${certUrl}')" class="flex items-center space-x-2 px-4 py-2 bg-brand-600 text-white hover:bg-brand-500 active:scale-95 font-semibold rounded-lg transition-all shadow-md text-sm">
+                    <button onclick="openPdfModal('${certUrl}', '${downloadUrl}')" class="flex items-center space-x-2 px-4 py-2 bg-brand-600 text-white hover:bg-brand-500 active:scale-95 font-semibold rounded-lg transition-all shadow-md text-sm">
                         <i data-lucide="file-badge" class="w-4 h-4"></i>
-                        <span>Lihat Sijil PDF</span>
+                        <span class="hidden sm:inline">Lihat Sijil PDF</span>
+                        <span class="sm:hidden">Lihat</span>
                     </button>
                 `;
             } else {
@@ -3054,7 +3047,7 @@
             }, 300); 
         }
 
-        function openPdfModal(url) {
+        function openPdfModal(url, downloadUrl) {
             let embedUrl = url;
             if (url.includes('drive.google.com') && url.includes('/view')) {
                 embedUrl = url.replace(/\/view.*/, '/preview');
@@ -3062,8 +3055,18 @@
             
             document.getElementById('pdf-iframe').src = embedUrl;
             
+            // Set link butang muat turun di dalam modal
+            const downloadBtn = document.getElementById('pdf-download-btn');
+            if(downloadUrl) {
+                downloadBtn.href = downloadUrl;
+                downloadBtn.classList.remove('hidden');
+            } else {
+                downloadBtn.classList.add('hidden');
+            }
+            
             const pdfModal = document.getElementById('pdf-modal');
             pdfModal.classList.remove('hidden');
+            lucide.createIcons();
             setTimeout(() => {
                 pdfModal.classList.remove('opacity-0');
                 document.getElementById('pdf-modal-content').classList.remove('scale-95');
