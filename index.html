@@ -324,11 +324,18 @@
                             <h2 class="text-2xl font-bold text-slate-800">Senarai Aset</h2>
                             <p class="text-sm text-slate-500">Pangkalan data induk inventori</p>
                         </div>
-                        <button id="btn-tambah-aset" onclick="openAddModal()" class="flex items-center space-x-1.5 md:space-x-2 px-3 md:px-4 py-2 bg-brand-600 text-white rounded-lg shadow-sm hover:bg-brand-500 transition-colors ml-2 md:ml-4 h-fit whitespace-nowrap">
-                            <i data-lucide="plus-circle" class="w-4 h-4"></i>
-                            <span class="text-sm font-semibold hidden sm:inline">Tambah Aset</span>
-                            <span class="text-sm font-semibold sm:hidden">Tambah</span>
-                        </button>
+                        <div class="flex items-center">
+                            <button onclick="downloadCSV()" class="flex items-center space-x-1.5 md:space-x-2 px-3 md:px-4 py-2 bg-emerald-600 text-white rounded-lg shadow-sm hover:bg-emerald-500 transition-colors ml-2 md:ml-4 h-fit whitespace-nowrap" title="Muat Turun Senarai">
+                                <i data-lucide="download" class="w-4 h-4"></i>
+                                <span class="text-sm font-semibold hidden sm:inline">Eksport CSV</span>
+                                <span class="text-sm font-semibold sm:hidden">CSV</span>
+                            </button>
+                            <button id="btn-tambah-aset" onclick="openAddModal()" class="flex items-center space-x-1.5 md:space-x-2 px-3 md:px-4 py-2 bg-brand-600 text-white rounded-lg shadow-sm hover:bg-brand-500 transition-colors ml-2 h-fit whitespace-nowrap">
+                                <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                                <span class="text-sm font-semibold hidden sm:inline">Tambah Aset</span>
+                                <span class="text-sm font-semibold sm:hidden">Tambah</span>
+                            </button>
+                        </div>
                     </div>
                     
                     <div class="grid grid-cols-1 sm:grid-cols-2 xl:flex xl:flex-row gap-3 w-full xl:w-auto">
@@ -1064,6 +1071,7 @@
         let authData = [];
         let mobilitiLogData = []; // PEMBETULAN: Ditambah untuk mengelakkan ralat ReferenceError di tab sejarah
         let currentUser = null;
+        let currentFilteredAssets = []; // Menyimpan senarai yang telah ditapis untuk dimuat turun
 
         let myChart = null;
         let pinjamanChart = null; 
@@ -1780,7 +1788,56 @@
                 return matchesSearch && matchesStatus && matchesLocation && matchesPinjaman;
             });
 
+            currentFilteredAssets = filteredData;
             renderAssets(filteredData);
+        }
+
+        function downloadCSV() {
+            if (!currentFilteredAssets || currentFilteredAssets.length === 0) {
+                showToast("Tiada data untuk dimuat turun.", "info");
+                return;
+            }
+
+            // Susun data untuk dieksport
+            const csvData = currentFilteredAssets.map((item, index) => ({
+                "No.": index + 1,
+                "Kategori": item['Category'] || '-',
+                "Jenama (Make)": item['Make'] || '-',
+                "Model": item['Model'] || '-',
+                "Siri (S/N)": item['Serial No'] || '-',
+                "Lokasi Asal": item['Location Origin'] || '-',
+                "Lokasi Semasa": item['Current Location'] || '-',
+                "Pemegang Semasa": item['Current Holder'] || '-',
+                "Status Pinjaman": item['Status Pinjaman'] || 'Tersedia',
+                "Tarikh Luput Sijil": item['Expired Date'] || '-',
+                "Status Luput": item._status || '-',
+                "Dikalibrasi Oleh": item['Calibration By'] || '-',
+                "Audit Terakhir": item['Last Audit Date'] || item['Last Audit'] || '-',
+                "Status Audit": item['Audit Status'] || '-',
+                "Catatan (Remark)": item['Remark'] || '-'
+            }));
+
+            // Convert kepada CSV menggunakan PapaParse
+            const csv = Papa.unparse(csvData);
+            
+            // Buat fail blob
+            const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' }); // \uFEFF memaksa encoding UTF-8 di Excel
+            const url = URL.createObjectURL(blob);
+            
+            // Cipta element <a> sementara untuk trigger muat turun
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            
+            // Nama fail dinamik mengikut tarikh
+            const date = new Date();
+            const dateString = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
+            link.setAttribute("download", `Senarai_Aset_${dateString}.csv`);
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast("Senarai aset berjaya dimuat turun sebagai CSV.", "info");
         }
 
         function switchMobilitiTab(tab) {
