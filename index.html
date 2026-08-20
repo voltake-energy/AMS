@@ -1069,9 +1069,9 @@
         
         let globalData = [];
         let authData = [];
-        let mobilitiLogData = []; // PEMBETULAN: Ditambah untuk mengelakkan ralat ReferenceError di tab sejarah
+        let mobilitiLogData = []; 
         let currentUser = null;
-        let currentFilteredAssets = []; // Menyimpan senarai yang telah ditapis untuk dimuat turun
+        let currentFilteredAssets = []; 
 
         let myChart = null;
         let pinjamanChart = null; 
@@ -1087,7 +1087,7 @@
         const ITEMS_PER_PAGE = 10;
         
         let currentEditingAsset = null;
-        let mobilitiCart = []; // Array for Mobiliti Asset selection
+        let mobilitiCart = []; 
 
         lucide.createIcons();
 
@@ -1223,7 +1223,6 @@
             if(btnTambahAset) btnTambahAset.classList.remove('hidden');
 
             if (role === 'admin') {
-                // Admin akses penuh
                 const tabMobApproval = document.getElementById('tab-mob-approval');
                 if(tabMobApproval) tabMobApproval.classList.remove('hidden');
             } else if (role === 'auditor') {
@@ -1337,7 +1336,7 @@
                 renderAuditList();
             }
             if(tabId === 'mobiliti') {
-                switchMobilitiTab('new'); // Default tunjuk troli pinjam
+                switchMobilitiTab('new');
                 renderMobilitiAssets();
             }
         }
@@ -1798,7 +1797,6 @@
                 return;
             }
 
-            // Susun data untuk dieksport
             const csvData = currentFilteredAssets.map((item, index) => ({
                 "No.": index + 1,
                 "Kategori": item['Category'] || '-',
@@ -1817,18 +1815,12 @@
                 "Catatan (Remark)": item['Remark'] || '-'
             }));
 
-            // Convert kepada CSV menggunakan PapaParse
             const csv = Papa.unparse(csvData);
-            
-            // Buat fail blob
-            const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' }); // \uFEFF memaksa encoding UTF-8 di Excel
+            const blob = new Blob(["\uFEFF" + csv], { type: 'text/csv;charset=utf-8;' }); 
             const url = URL.createObjectURL(blob);
-            
-            // Cipta element <a> sementara untuk trigger muat turun
             const link = document.createElement("a");
             link.setAttribute("href", url);
             
-            // Nama fail dinamik mengikut tarikh
             const date = new Date();
             const dateString = `${date.getFullYear()}${(date.getMonth()+1).toString().padStart(2, '0')}${date.getDate().toString().padStart(2, '0')}`;
             link.setAttribute("download", `Senarai_Aset_${dateString}.csv`);
@@ -1888,7 +1880,6 @@
         }
 
         function renderMobilitiHistory() {
-            // 1. PINJAMAN AKTIF
             const activeListContainer = document.getElementById('history-active-list');
             
             let activeLoans = globalData.filter(item => {
@@ -1930,7 +1921,6 @@
                 activeListContainer.innerHTML = activeHtml;
             }
 
-            // 2. SEJARAH LEPAS (Dari Database Sebenar Log Mobiliti)
             const pastListContainer = document.getElementById('history-past-list');
             
             let pastHistory = mobilitiLogData.filter(item => {
@@ -1940,7 +1930,6 @@
                 return isSelesai && isCurrentPeminjam;
             });
 
-            // Susun terbalik agar rekod yang paling baharu berada di atas
             pastHistory.reverse();
 
             if (pastHistory.length === 0) {
@@ -1991,7 +1980,6 @@
             document.getElementById('return-asset-name').innerText = `${item['Make'] || ''} ${item['Model'] || ''}`;
             document.getElementById('return-asset-sn').innerText = `S/N: ${item['Serial No'] || '-'}`;
 
-            // Auto Date Today
             const today = new Date();
             const dd = String(today.getDate()).padStart(2, '0');
             const mm = String(today.getMonth() + 1).padStart(2, '0');
@@ -2001,7 +1989,7 @@
             document.getElementById('return-condition').value = 'Baik';
             document.getElementById('return-remark').value = '';
             document.getElementById('return-pic').value = '';
-            toggleReturnRemark(); // reset required state
+            toggleReturnRemark(); 
 
             const modal = document.getElementById('return-modal');
             modal.classList.remove('hidden');
@@ -2105,7 +2093,7 @@
                     showCustomAlert("Pemulangan Aset Berjaya!\n\nAset ini kini berstatus 'Menunggu Pengesahan'. Admin akan mengesahkan pemulangan secara fizikal sebelum status ditukar sepenuhnya kepada Tersedia.");
                     closeReturnModal();
                     
-                    setTimeout(() => { loadData(); }, 1500); // Segar semula data terus dari Sheets
+                    setTimeout(() => { loadData(); }, 1500);
                 } else {
                     throw new Error(result.message);
                 }
@@ -2231,7 +2219,7 @@
                     showCustomAlert("Pengesahan Pemulangan Berjaya!\n\nAset kini dikemaskini sebagai 'Tersedia' dan ditempatkan di " + newLocation + ". Rekod ini disimpan secara sah dalam Log Mobiliti.");
                     closeApprovalModal();
                     
-                    setTimeout(() => { loadData(); }, 1500); // Segar semula data
+                    setTimeout(() => { loadData(); }, 1500);
                 } else {
                     throw new Error(result.message);
                 }
@@ -3013,7 +3001,6 @@
                 let downloadUrl = certUrl;
                 const docDriveId = getDriveId(certUrl);
                 
-                // Jika ia pautan Google Drive, formatkan untuk muat turun secara langsung
                 if (docDriveId) {
                     downloadUrl = `https://drive.google.com/uc?export=download&id=${docDriveId}`;
                 }
@@ -3037,7 +3024,8 @@
             const isAuditView = !document.getElementById('view-audit').classList.contains('hidden');
             const canEdit = currentUser && currentUser.designation.toLowerCase() === 'admin';
 
-            if(!isAuditView && canEdit) {
+            // Membuang !isAuditView membolehkan butang 'Kemaskini' wujud pada kedua-dua tab Senarai Aset dan Audit Aset
+            if(canEdit) {
                 buttonsHtml += `
                     <button onclick="openEditModal(${item._id})" class="flex items-center space-x-2 px-4 py-2 bg-amber-500 text-white hover:bg-amber-400 active:scale-95 font-semibold rounded-lg transition-all shadow-md text-sm">
                         <i data-lucide="edit-3" class="w-4 h-4"></i>
@@ -3112,7 +3100,6 @@
             
             document.getElementById('pdf-iframe').src = embedUrl;
             
-            // Set link butang muat turun di dalam modal
             const downloadBtn = document.getElementById('pdf-download-btn');
             if(downloadUrl) {
                 downloadBtn.href = downloadUrl;
@@ -3400,6 +3387,7 @@
                 }
 
                 const payloadData = {
+                    action: 'add',
                     category: document.getElementById('add-category').value,
                     make: document.getElementById('add-make').value,
                     model: document.getElementById('add-model').value,
@@ -3547,10 +3535,8 @@
                 if (result.status === "success") {
                     showCustomAlert("Profil berjaya dikemaskini!\n\nPerubahan telah disimpan ke dalam sistem (Google Sheets).");
                     
-                    // Segar semula data auth di latar belakang supaya kata laluan baharu aktif
                     loadAuthData(); 
                     
-                    // Kemaskini UI secara langsung jika ada gambar baharu
                     if (imgBase64) {
                         const reader = new FileReader();
                         reader.onload = function(e) {
