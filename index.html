@@ -1404,6 +1404,22 @@
             return false;
         }
 
+        // Seragamkan nama lokasi: buang kurungan/tarikh, abaikan huruf besar-kecil (Hq = HQ)
+        function normalizeLocation(raw) {
+            if (!raw) return '';
+            return String(raw)
+                .replace(/\([^)]*\)/g, '')
+                .replace(/\s*-\s*\d{1,2}[\/.-]\d{1,2}[\/.-]\d{2,4}\s*$/, '')
+                .replace(/\s+/g, ' ')
+                .trim()
+                .toUpperCase();
+        }
+
+        // Lokasi semasa; jika kosong, guna Lokasi Asal supaya aset tak jatuh ke 'Tidak Dinyatakan'
+        function getAssetLocation(item) {
+            return normalizeLocation(item['Current Location']) || normalizeLocation(item['Location Origin']);
+        }
+
         function processData(data) {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
@@ -1453,7 +1469,8 @@
                     _id: index,
                     _rowId: index + 2, 
                     _status: status,
-                    _statusColor: statusColor
+                    _statusColor: statusColor,
+                    _loc: getAssetLocation(item)
                 };
             });
 
@@ -1487,8 +1504,8 @@
                 else if (item._status === 'Lagi Seminggu') warningWeek++;
                 else if (item._status === 'Telah Luput') expired++;
 
-                let loc = item['Current Location'];
-                if (!loc || loc.trim() === '') loc = 'Tidak Dinyatakan';
+                let loc = item._loc;
+                if (!loc) loc = 'Tidak Dinyatakan';
                 locationCounts[loc] = (locationCounts[loc] || 0) + 1;
                 
                 let lastAuditVal = item['Last Audit Date'] || item['Last Audit'];
@@ -1545,7 +1562,7 @@
             const sortedLocations = Object.entries(locationCounts).sort((a, b) => b[1] - a[1]);
             
             sortedLocations.forEach(([loc, count]) => {
-                const safeLocStr = loc.replace(/'/g, "\\'");
+                const safeLocStr = loc.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '&quot;');
                 locationHtml += `
                     <div onclick="navigateAndFilterLocation('${safeLocStr}')" class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center space-x-3 cursor-pointer hover:-translate-y-1 hover:shadow-md transition-all">
                         <div class="p-2.5 bg-brand-50 rounded-lg text-brand-600 flex-shrink-0 border border-brand-100">
@@ -1563,7 +1580,7 @@
             const locationDropdown = document.getElementById('locationFilter');
             let locationOptionsHtml = '<option value="Semua Lokasi">Semua Lokasi</option>';
             sortedLocations.forEach(([loc, count]) => {
-                locationOptionsHtml += `<option value="${loc}">${loc}</option>`;
+                locationOptionsHtml += `<option value="${loc.replace(/"/g, '&quot;')}">${loc}</option>`;
             });
             locationDropdown.innerHTML = locationOptionsHtml;
             locationDropdown.value = currentLocationFilter;
@@ -1705,7 +1722,7 @@
                         </td>
                         <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-600">${item['Category'] || '-'}</td>
                         <td class="px-4 py-4 whitespace-nowrap">
-                            <div class="text-sm text-slate-800 font-medium">${item['Current Location'] || '-'}</div>
+                            <div class="text-sm text-slate-800 font-medium">${item._loc || '-'}</div>
                             <div class="text-[10px] text-slate-500 mt-0.5">Oleh: ${item['Current Holder'] || '-'}</div>
                         </td>
                         <td class="px-4 py-4 whitespace-nowrap text-sm text-slate-800 font-medium">${item['Expired Date'] || '-'}</td>
@@ -1735,7 +1752,7 @@
                             </div>
                             <div class="col-span-2 pt-2 border-t border-slate-100">
                                 <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-0.5"><i data-lucide="map-pin" class="w-3 h-3 inline mr-1"></i>Lokasi Semasa</p>
-                                <p class="font-medium text-slate-700">${item['Current Location'] || '-'} <span class="text-slate-400 font-normal">(${item['Current Holder'] || '-'})</span></p>
+                                <p class="font-medium text-slate-700">${item._loc || '-'} <span class="text-slate-400 font-normal">(${item['Current Holder'] || '-'})</span></p>
                             </div>
                         </div>
                     </div>
@@ -1751,7 +1768,7 @@
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
             
             const filteredData = globalData.filter(item => {
-                const searchString = `${item['Make']} ${item['Model']} ${item['Serial No']} ${item['Category']} ${item['Current Location']} ${item['Location Origin']}`.toLowerCase();
+                const searchString = `${item['Make']} ${item['Model']} ${item['Serial No']} ${item['Category']} ${item._loc} ${item['Current Location']} ${item['Location Origin']}`.toLowerCase();
                 
                 const matchesSearch = searchString.includes(searchTerm);
                 
@@ -1765,8 +1782,8 @@
                 }
 
                 let matchesLocation = false;
-                let itemLoc = item['Current Location'];
-                if (!itemLoc || itemLoc.trim() === '') itemLoc = 'Tidak Dinyatakan';
+                let itemLoc = item._loc;
+                if (!itemLoc) itemLoc = 'Tidak Dinyatakan';
 
                 if(currentLocationFilter === 'Semua Lokasi') {
                     matchesLocation = true;
@@ -1804,7 +1821,7 @@
                 "Model": item['Model'] || '-',
                 "Siri (S/N)": item['Serial No'] || '-',
                 "Lokasi Asal": item['Location Origin'] || '-',
-                "Lokasi Semasa": item['Current Location'] || '-',
+                "Lokasi Semasa": item._loc || '-',
                 "Pemegang Semasa": item['Current Holder'] || '-',
                 "Status Pinjaman": item['Status Pinjaman'] || 'Tersedia',
                 "Tarikh Luput Sijil": item['Expired Date'] || '-',
@@ -2332,7 +2349,7 @@
                             </div>
                             <div>
                                 <p class="text-[10px] text-slate-400 mb-0.5 font-bold uppercase tracking-wider">Lokasi Semasa</p>
-                                <p class="font-semibold text-slate-700 truncate" title="${item['Current Location']}">${item['Current Location'] || '-'}</p>
+                                <p class="font-semibold text-slate-700 truncate" title="${item._loc || ''}">${item._loc || '-'}</p>
                             </div>
                         </div>
                         <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center">
@@ -2625,7 +2642,7 @@
                                 <span class="font-bold mr-1 text-[10px] uppercase text-slate-400">S/N:</span> <span class="truncate font-semibold">${item['Serial No'] || '-'}</span>
                             </div>
                             <div class="flex items-center text-slate-600 justify-end">
-                                <i data-lucide="map-pin" class="w-3 h-3 mr-1 flex-shrink-0 text-slate-400"></i> <span class="truncate font-medium">${item['Current Location'] || '-'}</span>
+                                <i data-lucide="map-pin" class="w-3 h-3 mr-1 flex-shrink-0 text-slate-400"></i> <span class="truncate font-medium">${item._loc || '-'}</span>
                             </div>
                         </div>
 
@@ -2974,7 +2991,7 @@
                 { label: 'Tarikh Luput', value: item['Expired Date'] },
                 { label: 'Dikalibrasi Oleh', value: item['Calibration By'] },
                 { label: 'Asal Lokasi', value: item['Location Origin'] },
-                { label: 'Lokasi Semasa', value: item['Current Location'] },
+                { label: 'Lokasi Semasa', value: item._loc },
                 { label: 'Pemegang Semasa', value: item['Current Holder'] },
                 { label: 'Audit Terakhir', value: item['Last Audit Date'] || item['Last Audit'] },
                 { label: 'Status Audit', value: item['Audit Status'] },
